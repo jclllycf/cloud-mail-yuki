@@ -449,7 +449,12 @@ async function saveToken(token) {
   routers.forEach(routerData => {
     router.addRoute('layout', routerData);
   });
-  await router.replace({name: 'layout'})
+  const redirect = route.query.redirect;
+  if (redirect && typeof redirect === 'string' && redirect.startsWith('/') && !redirect.startsWith('//')) {
+    await router.replace(redirect);
+  } else {
+    await router.replace({name: 'layout'});
+  }
   uiStore.showNotice()
   oauthLoading.value = false;
   bindLoading.value = false;

@@ -824,6 +824,49 @@ const emailService = {
 			.get();
 	},
 
+	async getDetail(c, emailId, userId) {
+		emailId = Number(emailId);
+		if (!emailId || isNaN(emailId)) {
+			throw new BizError(t('emptyEmailId') || 'Invalid email ID');
+		}
+
+		const emailRow = await orm(c)
+			.select({
+				...emailListColumns,
+				starId: star.starId
+			})
+			.from(email)
+			.leftJoin(
+				star,
+				and(
+					eq(star.emailId, email.emailId),
+					eq(star.userId, userId)
+				)
+			)
+			.innerJoin(
+				account,
+				eq(account.accountId, email.accountId)
+			)
+			.where(
+				and(
+					eq(email.emailId, emailId),
+					eq(email.userId, userId),
+					eq(email.isDel, isDel.NORMAL),
+					eq(account.isDel, isDel.NORMAL)
+				)
+			)
+			.get();
+
+		if (!emailRow) {
+			throw new BizError(t('emailNotFound') || 'Email not found or access denied');
+		}
+
+		emailRow.isStar = emailRow.starId != null ? 1 : 0;
+		await this.emailAddAtt(c, [emailRow]);
+		emailRow.listText = this.toListText(emailRow);
+		return emailRow;
+	},
+
 	async latest(c, params, userId) {
 		let { emailId, accountId, allReceive } = params;
 		allReceive = Number(allReceive);

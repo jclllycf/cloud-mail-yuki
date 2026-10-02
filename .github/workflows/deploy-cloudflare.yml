@@ -6,6 +6,7 @@ on:
     paths:
       - "mail-worker/**"
       - "mail-vue/**"
+      - ".github/workflows/**"
   workflow_dispatch:
 
 jobs:
@@ -14,16 +15,16 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      NAME: ${{ secrets.NAME || vars.NAME || 'cloud-mail' }}
-      CUSTOM_DOMAIN: ${{ secrets.CUSTOM_DOMAIN || vars.CUSTOM_DOMAIN }}
-      DOMAIN: ${{ secrets.DOMAIN || vars.DOMAIN }}
+      NAME: ${{ secrets.NAME || vars.NAME || 'cloud-mail-yuki' }}
+      CUSTOM_DOMAIN: ${{ secrets.CUSTOM_DOMAIN || vars.CUSTOM_DOMAIN || 'mail.jcllyuki.com' }}
+      DOMAIN: ${{ secrets.DOMAIN || vars.DOMAIN || '[\"jcllyuki.com\"]' }}
       ADMIN: ${{ secrets.ADMIN || vars.ADMIN }}
-      JWT_SECRET: ${{ secrets.JWT_SECRET || vars.JWT_SECRET }}
-      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN || vars.CLOUDFLARE_API_TOKEN }}
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID || vars.CLOUDFLARE_ACCOUNT_ID }}
       D1_DATABASE_ID: ${{ secrets.D1_DATABASE_ID || vars.D1_DATABASE_ID }}
       KV_NAMESPACE_ID: ${{ secrets.KV_NAMESPACE_ID || vars.KV_NAMESPACE_ID }}
-      R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME || vars.R2_BUCKET_NAME }}
+      R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME || vars.R2_BUCKET_NAME || 'cloud-mail-r2' }}
       PROJECT_LINK: ${{ secrets.PROJECT_LINK || vars.PROJECT_LINK }}
       AI_MODEL: ${{ secrets.AI_MODEL || vars.AI_MODEL || '@cf/meta/llama-3.1-8b-instruct-fast' }}
       CLOUDFLARE_EMAIL: ${{ secrets.CF_EMAIL || vars.CF_EMAIL || false }}
@@ -64,18 +65,16 @@ jobs:
           
           echo "🔐 Starting environment setup..."
           
-          if [ -z "$JWT_SECRET" ] || grep -q '[?%#/\\]' <<< "$JWT_SECRET"; then
-            echo "❌ JWT_SECRET variable is empty or contains invalid characters (?, %, #, /, \\)."
-            exit 1
+          if [ -n "$JWT_SECRET" ]; then
+            echo "::add-mask::$JWT_SECRET"
+            if grep -q '[?%#/\\]' <<< "$JWT_SECRET"; then
+              echo "❌ JWT_SECRET contains invalid characters (?, %, #, /, \\)."
+              exit 1
+            fi
           fi
           
           if ! jq -e 'type == "array"' <<< "$DOMAIN" ; then
             echo "❌ DOMAIN variable must be a JSON array (e.g., [\"example.com\"])."
-            exit 1
-          fi
-          
-          if [ -z "$ADMIN" ]; then
-            echo "❌ ADMIN variable cannot be empty."
             exit 1
           fi
           
@@ -118,8 +117,12 @@ jobs:
           sed -i "s|\${NAME}|${NAME}|g" "$CONFIG_FILE"
           sed -i "s|\${CUSTOM_DOMAIN}|${CUSTOM_DOMAIN}|g" "$CONFIG_FILE"
           sed -i "s|\"\${DOMAIN}\"|${DOMAIN}|g" "$CONFIG_FILE"
-          sed -i "s|\${ADMIN}|${ADMIN}|g" "$CONFIG_FILE"
-          sed -i "s|\${JWT_SECRET}|${JWT_SECRET}|g" "$CONFIG_FILE"
+          if [ -n "$ADMIN" ]; then
+            sed -i "s|\${ADMIN}|${ADMIN}|g" "$CONFIG_FILE"
+          else
+            sed -i '/^admin = /d' "$CONFIG_FILE"
+          fi
+          # NOTE: jwt_secret is managed securely as a Cloudflare Worker Secret, never in [vars]!
           sed -i "s|\${R2_BUCKET_NAME}|${R2_BUCKET_NAME}|g" "$CONFIG_FILE"
           sed -i "s|\${PROJECT_LINK}|${PROJECT_LINK}|g" "$CONFIG_FILE"
           sed -i "s|\${ANALYSIS_CACHE}|${ANALYSIS_CACHE}|g" "$CONFIG_FILE"
@@ -157,6 +160,10 @@ jobs:
           if echo "$KV_LIST" | jq -e ".[] | select(.title == \"$NAME\")" >/dev/null; then
             echo "✅ Database $NAME already exists."
             KV_ID=$(echo "$KV_LIST" | jq -r ".[] | select(.title == \"$NAME\") | .id")
+            echo "KV_NAMESPACE_ID: $KV_ID"
+          elif echo "$KV_LIST" | jq -e '.[] | select(.title == "cloud-mail")' >/dev/null; then
+            echo "✅ Found existing KV database 'cloud-mail'."
+            KV_ID=$(echo "$KV_LIST" | jq -r '.[] | select(.title == "cloud-mail") | .id')
             echo "KV_NAMESPACE_ID: $KV_ID"
           else
             echo "⚠️ Database $NAME does not exist. Starting creation..."
@@ -196,6 +203,10 @@ jobs:
             echo "✅ Database $NAME already exists."
             D1_ID=$(echo "$DB_LIST" | jq -r ".[] | select(.name == \"$NAME\") | .uuid")
             echo "D1_DATABASE_ID: $D1_ID"
+          elif echo "$DB_LIST" | jq -e '.[] | select(.name == "cloud-mail")' >/dev/null; then
+            echo "✅ Found existing D1 database 'cloud-mail'."
+            D1_ID=$(echo "$DB_LIST" | jq -r '.[] | select(.name == "cloud-mail") | .uuid')
+            echo "D1_DATABASE_ID: $D1_ID"
           else
             echo "⚠️ Database $NAME does not exist. Starting creation..."
             pnpm wrangler d1 create $NAME
@@ -231,17 +242,28 @@ jobs:
           echo "worker_url=$WORKER_URL" >> $GITHUB_OUTPUT
           echo "✅ Setup completed."
 
+      - name: 🔐 同步 Worker Secret / Sync Worker Secret
+        if: env.JWT_SECRET != ''
+        working-directory: ./mail-worker
+        run: |
+          echo "::add-mask::$JWT_SECRET"
+          echo "Ensuring jwt_secret is set as Cloudflare Secret..."
+          echo "$JWT_SECRET" | pnpm wrangler secret put jwt_secret --name "$NAME"
+          echo "✅ Worker Secret synchronized securely."
+
       - name: ♻️ 初始化数据库 / Initialize database
+        if: env.JWT_SECRET != ''
         run: |
           echo "🛠️ Starting database initialization..."
+          echo "::add-mask::$JWT_SECRET"
           sleep 15
           
           WORKER_URL="${CUSTOM_DOMAIN:+https://$CUSTOM_DOMAIN}"
           WORKER_URL="${WORKER_URL:-${{ steps.deploy.outputs.worker_url }}}"
           
           if [ -z "$WORKER_URL" ]; then
-            echo "❌ Preview URL not available. Please set CUSTOM_DOMAIN."
-            exit 1
+            echo "::warning:: Preview URL not available. Skipping remote /api/init."
+            exit 0
           fi
           
           HTTP_CODE=$(curl -sL -w "%{http_code}" -o response.txt "$WORKER_URL/api/init/${JWT_SECRET}")
@@ -250,8 +272,7 @@ jobs:
           if [ "$RESPONSE_BODY" = "success" ]; then
             echo "✅ Setup completed."
           else
-            echo "❌ Failed. HTTP: $HTTP_CODE, Response: $RESPONSE_BODY"
-            exit 1
+            echo "::warning:: Init response: HTTP: $HTTP_CODE, Response: $RESPONSE_BODY"
           fi
 
       - name: 🗑️ 删除运行记录 / Delete workflow runs

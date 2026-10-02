@@ -51,13 +51,16 @@ const telegramService = {
 
 		const jwtToken = await jwtUtils.generateToken(c, { emailId: email.emailId })
 
-		const webAppUrl = customDomain ? `${domainUtils.toOssDomain(customDomain)}/api/telegram/getEmail/${jwtToken}` : 'https://www.cloudflare.com/404'
+		const baseDomain = customDomain ? domainUtils.toOssDomain(customDomain) : 'https://mail.jcllyuki.com';
+		const webAppUrl = `${baseDomain}/api/telegram/getEmail/${jwtToken}`;
+		const mailWebUrl = `${baseDomain}/mail?id=${email.emailId}`;
+
 		const inlineKeyboard = [];
 
 		if (email.code) {
 			inlineKeyboard.push([
 				{
-					text: `Copy ${email.code}`,
+					text: `📋 Copy ${email.code}`,
 					copy_text: { text: email.code }
 				}
 			]);
@@ -65,8 +68,12 @@ const telegramService = {
 
 		inlineKeyboard.push([
 			{
-				text: 'View Mail',
+				text: '⚡ Quick View',
 				web_app: { url: webAppUrl }
+			},
+			{
+				text: '📬 Open in YUKI MAIL',
+				url: mailWebUrl
 			}
 		]);
 

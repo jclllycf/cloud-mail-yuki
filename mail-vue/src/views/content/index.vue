@@ -1,5 +1,5 @@
 <template>
-  <div class="box">
+  <div class="box" v-loading="loading">
     <div class="header-actions">
       <Icon class="icon" icon="material-symbols-light:arrow-back-ios-new" width="20" height="20" @click="handleBack"/>
       <Icon v-perm="'email:delete'" class="icon" icon="uiw:delete" width="16" height="16" @click="handleDelete"/>
@@ -76,9 +76,9 @@
 <script setup>
 import ShadowHtml from '@/components/shadow-html/index.vue'
 import {computed, reactive, ref, watch, onMounted, onUnmounted} from "vue";
-import {useRouter} from 'vue-router'
+import {useRouter, useRoute} from 'vue-router'
 import {ElMessage, ElMessageBox} from 'element-plus'
-import {emailDelete, emailRead} from "@/request/email.js";
+import {emailDelete, emailRead, emailDetail} from "@/request/email.js";
 import {Icon} from "@iconify/vue";
 import {useEmailStore} from "@/store/email.js";
 import {useAccountStore} from "@/store/account.js";
@@ -98,6 +98,8 @@ const settingStore = useSettingStore();
 const accountStore = useAccountStore();
 const emailStore = useEmailStore();
 const router = useRouter()
+const route = useRoute()
+const loading = ref(false)
 const email = computed(() => emailStore.contentData.email || {
   emailId: 0,
   attList: [],
@@ -109,9 +111,49 @@ const showPreview = ref(false)
 const srcList = reactive([])
 
 const { t } = useI18n()
+let isDeepLinking = false
+
 watch(() => accountStore.currentAccountId, () => {
+  if (isDeepLinking) return
   handleBack()
 })
+
+async function loadDeepLinkEmail(emailId) {
+  if (!emailId) return
+  isDeepLinking = true
+  loading.value = true
+  try {
+    const detail = await emailDetail(emailId)
+    if (detail) {
+      if (detail.accountId && detail.accountId !== accountStore.currentAccountId) {
+        accountStore.currentAccountId = detail.accountId
+      }
+      emailStore.detailMap[detail.emailId] = detail
+      emailStore.contentData.email = emailStore.toContentEmail(detail)
+      emailStore.contentData.delType = 'logic'
+      emailStore.contentData.showUnread = true
+      emailStore.contentData.showStar = true
+      emailStore.contentData.showReply = true
+    }
+  } catch (e) {
+    console.error('Failed to load email by deep link:', e)
+    ElMessage.error(t('emailNotFound') || 'Email not found or access denied')
+  } finally {
+    loading.value = false
+    setTimeout(() => {
+      isDeepLinking = false
+    }, 300)
+  }
+}
+
+watch(
+  () => route.query.id,
+  (newId) => {
+    if (newId && String(emailStore.contentData.email?.emailId) !== String(newId)) {
+      loadDeepLinkEmail(newId)
+    }
+  }
+)
 
 let readRequesting = false
 
@@ -148,7 +190,14 @@ watch(
   { flush: 'post' }
 )
 
-onMounted(() => {
+onMounted(async () => {
+  const queryId = route.query.id
+  if (queryId && (!emailStore.contentData.email || String(emailStore.contentData.email.emailId) !== String(queryId))) {
+    await loadDeepLinkEmail(queryId)
+  } else if (!queryId && !emailStore.contentData.email?.emailId) {
+    router.replace('/inbox')
+    return
+  }
   tryMarkRead()
   window.addEventListener('keydown', handleKeyDown);
 })
@@ -231,7 +280,11 @@ function changeStar() {
 }
 
 const handleBack = () => {
-  router.back()
+  if (window.history.state && window.history.state.back) {
+    router.back()
+  } else {
+    router.push('/inbox')
+  }
 }
 
 const handleDelete = () => {
