@@ -262,9 +262,30 @@ jobs:
         working-directory: ./mail-worker
         run: |
           echo "::add-mask::$JWT_SECRET"
-          echo "Ensuring jwt_secret is set as Cloudflare Secret..."
-          echo "$JWT_SECRET" | pnpm wrangler secret put jwt_secret --name "$NAME"
-          echo "✅ Worker Secret synchronized securely."
+          echo "Checking existing Worker secrets on Cloudflare..."
+          set +e
+          SECRETS_LIST=$(pnpm wrangler secret list --name "$NAME" -c wrangler-action.toml 2>&1)
+          HAS_SECRET=$(echo "$SECRETS_LIST" | jq -r '.[] | select(.name == "jwt_secret") | .name' 2>/dev/null)
+          set -e
+
+          if [ "$HAS_SECRET" = "jwt_secret" ]; then
+            echo "✅ Worker secret 'jwt_secret' already exists on Cloudflare. Preserving existing secret."
+          else
+            echo "ℹ️ Worker secret 'jwt_secret' not found. Creating..."
+            set +e
+            PUT_OUTPUT=$(echo "$JWT_SECRET" | pnpm wrangler secret put jwt_secret --name "$NAME" -c wrangler-action.toml 2>&1)
+            PUT_STATUS=$?
+            set -e
+
+            if [ $PUT_STATUS -eq 0 ]; then
+              echo "✅ Worker Secret 'jwt_secret' created successfully."
+            elif echo "$PUT_OUTPUT" | grep -qi "already in use"; then
+              echo "✅ Worker secret 'jwt_secret' already in use on Cloudflare. Preserving existing binding."
+            else
+              echo "$PUT_OUTPUT"
+              exit $PUT_STATUS
+            fi
+          fi
 
       - name: ♻️ 初始化数据库 / Initialize database
         if: env.JWT_SECRET != ''
