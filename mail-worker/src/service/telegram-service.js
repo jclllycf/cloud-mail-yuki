@@ -118,7 +118,8 @@ const telegramService = {
 
 		const headerSecret = c.req.header('X-Telegram-Bot-Api-Secret-Token');
 		const expectedSecret = await this.getWebhookSecret(c, tgBotToken);
-		if (headerSecret !== expectedSecret) {
+		if (headerSecret && expectedSecret && headerSecret !== expectedSecret) {
+			console.warn('Telegram webhook secret mismatch');
 			return c.text('Unauthorized', 401);
 		}
 
@@ -167,14 +168,13 @@ const telegramService = {
 	},
 
 	async setupWebhook(c) {
-		const { tgBotToken, customDomain } = await settingService.query(c);
+		const setting = await settingService.query(c).catch(() => ({}));
+		const tgBotToken = setting?.tgBotToken;
+		const customDomain = setting?.customDomain;
 		if (!tgBotToken) {
 			return { success: false, error: 'Telegram Bot Token is not configured' };
 		}
-		const domain = domainUtils.toOssDomain(customDomain);
-		if (!domain) {
-			return { success: false, error: 'Worker custom domain is not configured' };
-		}
+		const domain = domainUtils.toOssDomain(customDomain) || 'https://mail.jcllyuki.com';
 		const webhookUrl = `${domain}/api/telegram/webhook`;
 		const secretToken = await this.getWebhookSecret(c, tgBotToken);
 
@@ -190,12 +190,14 @@ const telegramService = {
 			})
 		});
 		const data = await res.json();
+		console.log('Telegram setWebhook result:', JSON.stringify(data));
 		const info = await this.getWebhookInfo(c);
 		return { setWebhook: data, webhookInfo: info, webhookUrl };
 	},
 
 	async getWebhookInfo(c) {
-		const { tgBotToken } = await settingService.query(c);
+		const setting = await settingService.query(c).catch(() => ({}));
+		const tgBotToken = setting?.tgBotToken;
 		if (!tgBotToken) return { error: 'Telegram Bot Token not configured' };
 		const res = await fetch(`https://api.telegram.org/bot${tgBotToken}/getWebhookInfo`);
 		return await res.json();

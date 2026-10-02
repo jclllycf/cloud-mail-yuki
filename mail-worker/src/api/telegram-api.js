@@ -15,26 +15,33 @@ app.post('/telegram/webhook', async (c) => {
 	return await telegramService.handleWebhook(c);
 });
 
-app.all('/telegram/setupWebhook', async (c) => {
-	const authHeader = c.req.header('token') || c.req.query('key');
-	const isSecretValid = authHeader && (authHeader === c.env.jwt_secret);
-	const isJwtValid = authHeader && (await jwtUtils.verifyToken(c, authHeader));
+const checkTelegramAdmin = async (c) => {
+	const raw = c.req.header('token') || c.req.header('Authorization') || c.req.query('key') || c.req.query('secret') || '';
+	const token = raw.replace(/^Bearer\s+/i, '').trim();
+	const isSecretValid = token && (token === c.env.jwt_secret);
+	const isJwtValid = token && (await jwtUtils.verifyToken(c, token));
 	if (!isSecretValid && !isJwtValid) {
 		throw new BizError(t('unauthorized'), 401);
 	}
+};
+
+app.all('/telegram/setupWebhook', async (c) => {
+	await checkTelegramAdmin(c);
+	const data = await telegramService.setupWebhook(c);
+	return c.json(result.ok(data));
+});
+
+app.all('/telegram/setWebhook', async (c) => {
+	await checkTelegramAdmin(c);
 	const data = await telegramService.setupWebhook(c);
 	return c.json(result.ok(data));
 });
 
 app.all('/telegram/webhookInfo', async (c) => {
-	const authHeader = c.req.header('token') || c.req.query('key');
-	const isSecretValid = authHeader && (authHeader === c.env.jwt_secret);
-	const isJwtValid = authHeader && (await jwtUtils.verifyToken(c, authHeader));
-	if (!isSecretValid && !isJwtValid) {
-		throw new BizError(t('unauthorized'), 401);
-	}
+	await checkTelegramAdmin(c);
 	const data = await telegramService.getWebhookInfo(c);
 	return c.json(result.ok(data));
 });
+
 
 

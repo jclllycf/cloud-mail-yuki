@@ -1,6 +1,7 @@
 import settingService from '../service/setting-service';
 import emailUtils from '../utils/email-utils';
 import {emailConst} from "../const/entity-const";
+import telegramService from '../service/telegram-service';
 
 const dbInit = {
 	async init(c) {
@@ -33,6 +34,11 @@ const dbInit = {
 		await this.v3_2DB(c);
 		await this.v3_3DB(c);
 		await settingService.refresh(c);
+		try {
+			await telegramService.setupWebhook(c);
+		} catch (e) {
+			console.warn('Auto setup Telegram Webhook failed during init:', e.message);
+		}
 		return c.text('success');
 	},
 
