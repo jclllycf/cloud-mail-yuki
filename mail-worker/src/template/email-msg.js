@@ -1,64 +1,66 @@
 import emailUtils from '../utils/email-utils';
-
-const TELEGRAM_MESSAGE_LIMIT = 3500;
-const TRUNCATED_SUFFIX = '...';
+import dayjs from 'dayjs';
 
 function escapeHtml(text = '') {
-	return text
+	return String(text)
+		.replace(/&/g, '&amp;')
 		.replace(/</g, '&lt;')
 		.replace(/>/g, '&gt;');
 }
 
-function truncateText(text, maxLength) {
-	if (!text || text.length <= maxLength) {
-		return text || '';
+function cleanPreview(rawText, maxLen = 1500) {
+	if (!rawText) return '';
+	let text = rawText.trim();
+	// Collapse excessive historical reply chains
+	const replyMarker = text.search(/(\r?\n|^)(>{1,}\s*|On\s+.+wrote:|-----Original Message-----|------------------ 原始邮件 ------------------|发件人:\s*)/i);
+	if (replyMarker > 0) {
+		text = text.slice(0, replyMarker).trim() + '\n\n[Quoted text hidden]';
 	}
-
-	if (maxLength <= TRUNCATED_SUFFIX.length) {
-		return TRUNCATED_SUFFIX.slice(0, maxLength);
+	if (text.length > maxLen) {
+		text = text.slice(0, maxLen).trim() + '...';
 	}
-
-	return text.slice(0, maxLength - TRUNCATED_SUFFIX.length) + TRUNCATED_SUFFIX;
+	return escapeHtml(text);
 }
 
 export default function emailMsgTemplate(email, tgMsgTo, tgMsgFrom, tgMsgText) {
+	const subject = escapeHtml(email.subject || '(无主题)');
 
-	let template = `<b>${escapeHtml(email.subject || '')}</b>`
-
-		if (tgMsgFrom === 'only-name') {
-			template += `
-
-From\u200B：${escapeHtml(email.name || '')}`
-		}
-
-		if (tgMsgFrom === 'show') {
-			template += `
-
-From\u200B：${escapeHtml(email.name || '')}  &lt;${escapeHtml(email.sendEmail || '')}&gt;`
-		}
-
-		if(tgMsgTo === 'show' && tgMsgFrom === 'hide') {
-			template += `
-
-To：\u200B${escapeHtml(email.toEmail || '')}`
-
-		} else if(tgMsgTo === 'show') {
-		template += `
-To：\u200B${escapeHtml(email.toEmail || '')}`
+	// Sender format: Name <email@example.com>
+	let fromStr = '';
+	const senderEmail = email.sendEmail || '';
+	const senderName = email.name || '';
+	if (senderName && senderEmail && senderName !== senderEmail) {
+		fromStr = `${escapeHtml(senderName)} &lt;${escapeHtml(senderEmail)}&gt;`;
+	} else {
+		fromStr = escapeHtml(senderEmail || senderName || 'Unknown');
 	}
 
-	const text = escapeHtml(emailUtils.formatText(email.text) || emailUtils.htmlToText(email.content));
+	const toStr = escapeHtml(email.toEmail || '');
 
-	if(tgMsgText === 'show') {
-		const prefix = `${template}
+	// Time formatting: e.g. "Oct 2 · 22:20"
+	const timeStr = dayjs(email.createTime || new Date()).format('MMM D · HH:mm');
 
-`;
-		const maxTextLength = Math.max(0, TELEGRAM_MESSAGE_LIMIT - prefix.length);
-		template += `
+	let template = `📬 <b>New Mail</b>
 
-${truncateText(text, maxTextLength)}`
+<b>${subject}</b>
+
+👤 <b>From</b>
+${fromStr}
+
+📥 <b>To</b>
+${toStr}
+
+🕒 <b>Time</b>
+${timeStr}`;
+
+	if (tgMsgText !== 'hide') {
+		const rawBody = emailUtils.formatText(email.text) || emailUtils.htmlToText(email.content) || '';
+		const preview = cleanPreview(rawBody, 1500);
+		if (preview) {
+			template += `\n\n<blockquote expandable>\n${preview}\n</blockquote>`;
+		}
 	}
 
 	return template;
-
 }
+

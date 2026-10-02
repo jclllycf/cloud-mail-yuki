@@ -3,8 +3,27 @@ import domainUtils from '../utils/domain-uitls';
 
 export default function emailHtmlTemplate(html, domain) {
 
-	const { document } = parseHTML(html);
-	document.querySelectorAll('script').forEach(script => script.remove());
+	const { document } = parseHTML(html || '');
+
+	// 1. Remove dangerous active tags
+	document.querySelectorAll('script, iframe, frame, object, embed, base, applet, form').forEach(el => el.remove());
+
+	// 2. Remove all inline event handlers (on*) and javascript: / data: URLs
+	document.querySelectorAll('*').forEach(el => {
+		for (const attr of Array.from(el.attributes)) {
+			const attrName = attr.name.toLowerCase();
+			const attrVal = (attr.value || '').trim().toLowerCase();
+			if (
+				attrName.startsWith('on') ||
+				attrVal.startsWith('javascript:') ||
+				attrVal.startsWith('vbscript:') ||
+				attrVal.startsWith('data:text/html')
+			) {
+				el.removeAttribute(attr.name);
+			}
+		}
+	});
+
 	html = document.toString();
 	html = html.replace(/{{domain}}/g, domainUtils.toOssDomain(domain) + '/');
 	const safeHtmlJson = JSON.stringify(html).replace(/</g, '\\u003C');

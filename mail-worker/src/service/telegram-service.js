@@ -52,23 +52,23 @@ const telegramService = {
 		const jwtToken = await jwtUtils.generateToken(c, { emailId: email.emailId })
 
 		const webAppUrl = customDomain ? `${domainUtils.toOssDomain(customDomain)}/api/telegram/getEmail/${jwtToken}` : 'https://www.cloudflare.com/404'
-		const inlineKeyboard = [
-			[
-				{
-					text: 'View',
-					web_app: { url: webAppUrl }
-				}
-			]
-		];
+		const inlineKeyboard = [];
 
 		if (email.code) {
 			inlineKeyboard.push([
 				{
-					text: email.code,
+					text: `Copy ${email.code}`,
 					copy_text: { text: email.code }
 				}
 			]);
 		}
+
+		inlineKeyboard.push([
+			{
+				text: 'View Mail',
+				web_app: { url: webAppUrl }
+			}
+		]);
 
 		await Promise.all(tgChatIds.map(async chatId => {
 			try {
@@ -94,8 +94,107 @@ const telegramService = {
 			}
 		}));
 
+	},
+
+	async getWebhookSecret(c, tgBotToken) {
+		if (!tgBotToken) return '';
+		const raw = `${tgBotToken}:${c.env?.jwt_secret || 'cloud-mail-telegram'}`;
+		const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(raw));
+		return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('').slice(0, 32);
+	},
+
+	async handleWebhook(c) {
+		const { tgBotToken } = await settingService.query(c);
+		if (!tgBotToken) {
+			return c.text('Bot not configured', 200);
+		}
+
+		const headerSecret = c.req.header('X-Telegram-Bot-Api-Secret-Token');
+		const expectedSecret = await this.getWebhookSecret(c, tgBotToken);
+		if (headerSecret !== expectedSecret) {
+			return c.text('Unauthorized', 401);
+		}
+
+		const update = await c.req.json().catch(() => null);
+		if (!update || !update.message || !update.message.text) {
+			return c.text('OK');
+		}
+
+		const message = update.message;
+		const text = (message.text || '').trim();
+		const chatId = message.chat?.id;
+		if (!chatId) return c.text('OK');
+
+		if (text === '/start' || text.startsWith('/start ') || text.startsWith('/start@')) {
+			const reply = `📬 <b>YUKI MAIL BOT</b>\n\nConnected successfully.\n\nI’ll notify you here when new mail arrives at jcllyuki.com.\n\n• Mail: mail.jcllyuki.com\n• Storage: R2\n• Notifications: Enabled`;
+			await this.sendTelegramMsg(tgBotToken, chatId, reply);
+			return c.text('OK');
+		}
+
+		if (text === '/help' || text.startsWith('/help ') || text.startsWith('/help@')) {
+			const reply = `📬 <b>YUKI MAIL BOT</b>\n\nPersonal mail notification service.\n\n📩 New mail notifications\n🔐 Verification code extraction\n👁 Mail preview`;
+			await this.sendTelegramMsg(tgBotToken, chatId, reply);
+			return c.text('OK');
+		}
+
+		// Silently ignore other commands or messages
+		return c.text('OK');
+	},
+
+	async sendTelegramMsg(tgBotToken, chatId, htmlText) {
+		try {
+			await fetch(`https://api.telegram.org/bot${tgBotToken}/sendMessage`, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({
+					chat_id: chatId,
+					parse_mode: 'HTML',
+					text: htmlText
+				})
+			});
+		} catch (e) {
+			console.error('发送 Telegram 消息失败:', e.message);
+		}
+	},
+
+	async setupWebhook(c) {
+		const { tgBotToken, customDomain } = await settingService.query(c);
+		if (!tgBotToken) {
+			return { success: false, error: 'Telegram Bot Token is not configured' };
+		}
+		const domain = domainUtils.toOssDomain(customDomain);
+		if (!domain) {
+			return { success: false, error: 'Worker custom domain is not configured' };
+		}
+		const webhookUrl = `${domain}/api/telegram/webhook`;
+		const secretToken = await this.getWebhookSecret(c, tgBotToken);
+
+		const res = await fetch(`https://api.telegram.org/bot${tgBotToken}/setWebhook`, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify({
+				url: webhookUrl,
+				secret_token: secretToken,
+				allowed_updates: ['message']
+			})
+		});
+		const data = await res.json();
+		const info = await this.getWebhookInfo(c);
+		return { setWebhook: data, webhookInfo: info, webhookUrl };
+	},
+
+	async getWebhookInfo(c) {
+		const { tgBotToken } = await settingService.query(c);
+		if (!tgBotToken) return { error: 'Telegram Bot Token not configured' };
+		const res = await fetch(`https://api.telegram.org/bot${tgBotToken}/getWebhookInfo`);
+		return await res.json();
 	}
 
 }
 
-export default telegramService
+export default telegramService;
+
