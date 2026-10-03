@@ -2,7 +2,7 @@ name: 🚀 Deploy cloud-mail to Cloudflare Workers
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, feat/mcp-v1 ]
     paths:
       - "mail-worker/**"
       - "mail-vue/**"

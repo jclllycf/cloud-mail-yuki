@@ -72,13 +72,17 @@ Append the following to your Codex configuration file:
 [mcp_servers.cloud_mail]
 command = "node"
 args = ["D:\\Users\\JCLXJ\\Documents\\AI Project\\cloud\\cloud-mail-yuki\\packages\\mcp-server\\dist\\index.js"]
+env_vars = ["CLOUD_MAIL_TOKEN"]
 startup_timeout_sec = 30
 
 [mcp_servers.cloud_mail.env]
 CLOUD_MAIL_API_URL = "https://mail.jcllyuki.com"
-CLOUD_MAIL_TOKEN = "<your-token-here>"
 CLOUD_MAIL_MODE = "readonly"
 ```
+
+> **Security Note**: `CLOUD_MAIL_TOKEN` is passed via `env_vars` and inherited from your Windows user environment variables, keeping `config.toml` free of secrets. Set it in PowerShell with:
+> `[Environment]::SetEnvironmentVariable("CLOUD_MAIL_TOKEN", "<your-token>", "User")`
+
 
 ### 2. Claude Desktop (`claude_desktop_config.json`)
 ```json
