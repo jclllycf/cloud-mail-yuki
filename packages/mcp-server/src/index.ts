@@ -4,6 +4,7 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { loadConfig } from './config.js';
 import { CloudMailClient } from './client.js';
 import { registerReadTools } from './tools/read.js';
+import { registerWriteTools } from './tools/write.js';
 
 async function main() {
   const config = loadConfig();
@@ -14,8 +15,11 @@ async function main() {
     version: '1.0.0',
   });
 
-  // Register read tools
+  // Register read tools (always active)
   registerReadTools(server, client);
+
+  // Register guarded write tools (governed by CLOUD_MAIL_MODE)
+  registerWriteTools(server, client, config);
 
   const transport = new StdioServerTransport();
   await server.connect(transport);
