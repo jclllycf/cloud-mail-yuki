@@ -1,7 +1,8 @@
 <p align="center">
     <img src="doc/demo/logo.png" width="80px" />
-    <h1 align="center">Cloud Mail</h1>
-    <p align="center">基于 Cloudflare 的简约响应式邮箱服务，支持邮件发送、附件收发 🎉</p> 
+    <h1 align="center">Cloud Mail Agent</h1>
+    <p align="center"><strong>Cloud Mail Agent</strong> — Turn Cloud Mail into an MCP-native mailbox for Codex, Claude, Antigravity and other AI agents.</p>
+    <p align="center">基于 Cloudflare 的简约响应式邮箱服务与 Agent-Native 邮件基础设施，支持邮件收发、两阶段上下文检索与 8 大 MCP 工具 🎉</p> 
     <p align="center">
         简体中文 | <a href="/README-en.md" style="margin-left: 5px">English </a>
     </p>
@@ -32,7 +33,19 @@
 
 ## 项目简介
 
-只需要一个域名，就可以创建多个不同的邮箱，类似各大邮箱平台，本项目支持署到 Cloudflare Workers ，降低服务器成本，搭建自己的邮箱服务
+只需要一个域名，就可以创建多个不同的邮箱，类似各大邮箱平台，本项目支持部署到 Cloudflare Workers ，降低服务器成本，搭建自己的邮箱服务。
+
+## 🤖 AI Agent & MCP 原生支持
+
+Cloud Mail Agent 原生支持 **Model Context Protocol (MCP)** 标准，专为 **OpenAI Codex**、**Claude Code / Desktop**、**Antigravity**、**Cursor** 等 AI Coding Agent 设计：
+
+- **极简集成**：沿用单凭证 `CLOUD_MAIL_TOKEN`，无需 OAuth、多级 RBAC 或二次 API Key 膨胀。
+- **两阶段检索**：`cloud_mail_list` / `cloud_mail_search` 仅返回紧凑元数据，按需通过 `cloud_mail_get` 提取正文，杜绝 LLM 上下文爆炸。
+- **验证码秒取**：`cloud_mail_get_verification_code` 专有工具，< 100 token 极简返回，优先复用 D1 Workers AI 提取结果。
+- **双重安全模式**：默认 `CLOUD_MAIL_MODE=readonly`，拦截写操作；`full` 模式下支持发信、软删除与隔离邮箱创建。
+
+👉 **详细集成与配置教程请查看：[MCP Setup & Integration Guide](docs/MCP_SETUP_GUIDE.md)**
+
 
 ## 项目展示
 
@@ -145,9 +158,11 @@ cloud-mail
 <img width="170px" src="./doc/images/support.png" alt="">
 </a>
 
-## 许可证
+## 许可证与致谢
 
-本项目采用 [MIT](LICENSE) 许可证	
+本项目采用 [MIT](LICENSE) 许可证。
+
+本项目基于上游开源项目 [maillab/cloud-mail](https://github.com/maillab/cloud-mail) 进行扩展开发，保留原作者的版权与 MIT 许可声明。衷心感谢原作者及开源社区贡献者的卓越工作！
 
 
 ## 交流
