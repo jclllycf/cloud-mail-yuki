@@ -19,8 +19,8 @@ function jsonResult(data: unknown) {
 }
 
 function checkWritable(config: ServerConfig, toolName: string): string | null {
-  if (config.mode !== 'full') {
-    return `Write operation rejected: Tool "${toolName}" is disabled because CLOUD_MAIL_MODE is set to "${config.mode}". Set CLOUD_MAIL_MODE=full in your environment to enable write operations.`;
+  if (config.mode === 'readonly') {
+    return `Write operation rejected: Tool "${toolName}" is disabled because CLOUD_MAIL_MODE is set to "readonly". Set CLOUD_MAIL_MODE=ask (default, user approval required) or CLOUD_MAIL_MODE=full to enable write operations.`;
   }
   return null;
 }
@@ -31,10 +31,12 @@ export function registerWriteTools(server: McpServer, client: CloudMailClient, c
     'cloud_mail_send',
     {
       description:
-        'Send a new email immediately. HIGH RISK: This sends real emails to recipients. Blocked in readonly mode (requires CLOUD_MAIL_MODE=full).',
+        'Send a new email immediately. HIGH RISK: This sends real emails to external recipients. Blocked in readonly mode; requires user confirmation in ask mode.',
       inputSchema: SendEmailSchema.shape,
       annotations: {
         readOnlyHint: false,
+        destructiveHint: true,
+        openWorldHint: true,
       },
     },
     async (args) => {
@@ -73,7 +75,7 @@ export function registerWriteTools(server: McpServer, client: CloudMailClient, c
     'cloud_mail_delete',
     {
       description:
-        'Soft-delete an email by moving it to the trash folder (reversible via Web UI). DESTRUCTIVE ACTION: Blocked in readonly mode (requires CLOUD_MAIL_MODE=full).',
+        'Soft-delete an email by moving it to the trash folder (reversible via Web UI). DESTRUCTIVE ACTION: Blocked in readonly mode; requires user confirmation in ask mode.',
       inputSchema: DeleteEmailSchema.shape,
       annotations: {
         readOnlyHint: false,
@@ -105,10 +107,11 @@ export function registerWriteTools(server: McpServer, client: CloudMailClient, c
     'cloud_mail_create_mailbox',
     {
       description:
-        'Create a new email address / mailbox under your configured Cloud Mail domain. Blocked in readonly mode (requires CLOUD_MAIL_MODE=full).',
+        'Create a new email address / mailbox under your configured Cloud Mail domain. Blocked in readonly mode; requires user confirmation in ask mode.',
       inputSchema: CreateMailboxSchema.shape,
       annotations: {
         readOnlyHint: false,
+        destructiveHint: false,
       },
     },
     async (args) => {

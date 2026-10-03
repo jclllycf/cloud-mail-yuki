@@ -301,6 +301,51 @@ describe('MCP Tools Suite', () => {
       expect(mockClient.createMailbox).not.toHaveBeenCalled();
     });
 
+    it('in ask mode, write tools are enabled and execute successfully upon host approval', async () => {
+      const askServer = createRegisteredServer('ask');
+
+      // 1. sendEmail
+      vi.mocked(mockClient.sendEmail).mockResolvedValue({
+        emailId: 202,
+        status: 'sent',
+        toEmail: 'alice@example.com',
+        subject: 'Hello Alice',
+      });
+      const sendRes = await callTool(askServer, 'cloud_mail_send', {
+        to: 'alice@example.com',
+        subject: 'Hello Alice',
+        text: 'Reply content',
+      });
+      const parsedSend = JSON.parse(sendRes.content[0].text);
+      expect(parsedSend.success).toBe(true);
+      expect(parsedSend.emailId).toBe(202);
+      expect(mockClient.sendEmail).toHaveBeenCalledWith(
+        expect.objectContaining({ to: 'alice@example.com', subject: 'Hello Alice' })
+      );
+
+      // 2. deleteEmail
+      vi.mocked(mockClient.deleteEmail).mockResolvedValue({
+        emailId: 92,
+        deleted: true,
+        isDel: 1,
+      });
+      const delRes = await callTool(askServer, 'cloud_mail_delete', { emailId: 92 });
+      const parsedDel = JSON.parse(delRes.content[0].text);
+      expect(parsedDel.success).toBe(true);
+      expect(parsedDel.emailId).toBe(92);
+      expect(mockClient.deleteEmail).toHaveBeenCalledWith(92);
+
+      // 3. createMailbox
+      vi.mocked(mockClient.createMailbox).mockResolvedValue({ success: true });
+      const createRes = await callTool(askServer, 'cloud_mail_create_mailbox', {
+        email: 'test-mcp-ask@jcllyuki.com',
+      });
+      const parsedCreate = JSON.parse(createRes.content[0].text);
+      expect(parsedCreate.success).toBe(true);
+      expect(parsedCreate.createdEmail).toBe('test-mcp-ask@jcllyuki.com');
+      expect(mockClient.createMailbox).toHaveBeenCalledWith('test-mcp-ask@jcllyuki.com', undefined);
+    });
+
     it('in full mode, dispatches send, delete, and create_mailbox successfully', async () => {
       const fullServer = createRegisteredServer('full');
 

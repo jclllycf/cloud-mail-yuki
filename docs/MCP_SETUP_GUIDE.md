@@ -11,7 +11,7 @@ The Cloud Mail MCP Server connects your AI assistants directly to your private C
 ### Key Capabilities
 - **Two-Stage Compact Retrieval**: `cloud_mail_list` and `cloud_mail_search` return compact metadata, stripping full HTML/body content to save token context. Full body is retrieved on demand via `cloud_mail_get`.
 - **Instant Verification Codes**: Dedicated `cloud_mail_get_verification_code` tool fetches codes in under 100 tokens with D1 Workers AI pre-extraction and deterministic regex fallback.
-- **Safety Boundary**: Dual mode (`CLOUD_MAIL_MODE=readonly | full`, default: `readonly`). High-risk mutating operations (`send`, `delete`, `create_mailbox`) are deterministically blocked in `readonly` mode.
+- **Safety Boundary**: Triple mode (`CLOUD_MAIL_MODE=readonly | ask | full`, default: `ask`). In `readonly` mode, mutating operations are hard-blocked locally. In `ask` mode (recommended default), write tools require user approval through the MCP Host. In `full` mode, write tools execute directly.
 - **Zero Token Bloat**: Reuses Cloud Mail's original single Public Token (`/api/public/genToken`) with automatic rotation. No OAuth or complex RBAC needed.
 
 ---
@@ -27,12 +27,12 @@ The Cloud Mail MCP Server connects your AI assistants directly to your private C
 | `cloud_mail_get_verification_code` | `serviceName` (e.g. `GitHub`), `from`, `toEmail`, `maxAgeMinutes` (default: 15) | Retrieve recent 4-8 digit verification code with zero extra LLM calls. |
 | `cloud_mail_get_attachment` | `emailId`, `attId`, `maxTextLength` (default: 8000) | Preview text files (`.txt`, `.json`, `.csv`, `.log`, `.md`) or return URL for binary files. |
 
-### ✏️ Guarded Write Tools (`CLOUD_MAIL_MODE=full` Required)
-| Tool Name | Parameters | Description & Safety Guard |
-| :--- | :--- | :--- |
-| `cloud_mail_send` | `to`, `subject`, `text`, `html?`, `from?`, `cc?`, `bcc?` | Send real email via Cloudflare Email or Resend. Blocked in `readonly` mode. |
-| `cloud_mail_delete` | `emailId` | **Soft-delete** email (moves to trash). Marked `destructiveHint=true`. Blocked in `readonly` mode. |
-| `cloud_mail_create_mailbox` | `email`, `password?` | Dynamically create an isolated address under your domain for agent tasks. Blocked in `readonly` mode. |
+### ✏️ Guarded Write Tools (`readOnlyHint = false`, Blocked in `readonly` Mode)
+| Tool Name | Parameters | Annotations | Description & Safety Guard |
+| :--- | :--- | :--- | :--- |
+| `cloud_mail_send` | `to`, `subject`, `text`, `html?`, `from?`, `cc?`, `bcc?` | `destructiveHint: true`<br>`openWorldHint: true` | Send real email via Cloudflare Email / Resend. Irreversible communication side effect. Prompts for approval in `ask` mode. |
+| `cloud_mail_delete` | `emailId` | `destructiveHint: true` | **Soft-delete** email (moves to trash, reversible). Prompts for approval in `ask` mode. |
+| `cloud_mail_create_mailbox` | `email`, `password?` | `destructiveHint: false` | Dynamically create an isolated address under your domain for agent tasks. Prompts for approval in `ask` mode. |
 
 ---
 
@@ -42,7 +42,7 @@ The Cloud Mail MCP Server connects your AI assistants directly to your private C
 | :--- | :---: | :---: | :--- |
 | `CLOUD_MAIL_API_URL` | No | `https://mail.jcllyuki.com` | Base URL of your Cloud Mail deployment. |
 | `CLOUD_MAIL_TOKEN` | **Yes** | — | Public API Token generated from `/api/public/genToken`. |
-| `CLOUD_MAIL_MODE` | No | `readonly` | `readonly` (safe, read-only) or `full` (allows send, delete, create). |
+| `CLOUD_MAIL_MODE` | No | `ask` | `readonly` (safe, hard-blocks writes), `ask` (recommended default, requires user approval for writes), or `full` (direct execution). |
 
 ### Obtaining Your Token
 Call `/api/public/genToken` with your Cloud Mail admin credentials:
@@ -66,7 +66,7 @@ Response:
 ## 💻 Client Configuration
 
 ### 1. OpenAI Codex (`~/.codex/config.toml`)
-Append the following to your Codex configuration file:
+Append the following to your Codex configuration file. This configuration uses Codex's native per-tool approval settings so read operations are automated while write operations always prompt for your explicit approval:
 
 ```toml
 [mcp_servers.cloud_mail]
@@ -74,10 +74,35 @@ command = "node"
 args = ["D:\\Users\\JCLXJ\\Documents\\AI Project\\cloud\\cloud-mail-yuki\\packages\\mcp-server\\dist\\index.js"]
 env_vars = ["CLOUD_MAIL_TOKEN"]
 startup_timeout_sec = 30
+default_tools_approval_mode = "prompt"
+
+[mcp_servers.cloud_mail.tools.cloud_mail_list]
+approval_mode = "auto"
+
+[mcp_servers.cloud_mail.tools.cloud_mail_search]
+approval_mode = "auto"
+
+[mcp_servers.cloud_mail.tools.cloud_mail_get]
+approval_mode = "auto"
+
+[mcp_servers.cloud_mail.tools.cloud_mail_get_verification_code]
+approval_mode = "auto"
+
+[mcp_servers.cloud_mail.tools.cloud_mail_get_attachment]
+approval_mode = "auto"
+
+[mcp_servers.cloud_mail.tools.cloud_mail_send]
+approval_mode = "prompt"
+
+[mcp_servers.cloud_mail.tools.cloud_mail_delete]
+approval_mode = "prompt"
+
+[mcp_servers.cloud_mail.tools.cloud_mail_create_mailbox]
+approval_mode = "prompt"
 
 [mcp_servers.cloud_mail.env]
 CLOUD_MAIL_API_URL = "https://mail.jcllyuki.com"
-CLOUD_MAIL_MODE = "readonly"
+CLOUD_MAIL_MODE = "ask"
 ```
 
 > **Security Note**: `CLOUD_MAIL_TOKEN` is passed via `env_vars` and inherited from your Windows user environment variables, keeping `config.toml` free of secrets. Set it in PowerShell with:

@@ -17,7 +17,7 @@ describe('loadConfig', () => {
     expect(() => loadConfig()).toThrow(/Missing CLOUD_MAIL_TOKEN/);
   });
 
-  it('loads valid configuration and defaults to readonly mode', () => {
+  it('loads valid configuration and defaults to ask mode', () => {
     process.env.CLOUD_MAIL_TOKEN = 'test-token-123';
     process.env.CLOUD_MAIL_API_URL = 'https://mail.jcllyuki.com';
     delete process.env.CLOUD_MAIL_MODE;
@@ -25,7 +25,23 @@ describe('loadConfig', () => {
     const config = loadConfig();
     expect(config.token).toBe('test-token-123');
     expect(config.apiUrl).toBe('https://mail.jcllyuki.com/api');
+    expect(config.mode).toBe('ask');
+  });
+
+  it('parses readonly mode correctly', () => {
+    process.env.CLOUD_MAIL_TOKEN = 'test-token-123';
+    process.env.CLOUD_MAIL_MODE = 'readonly';
+
+    const config = loadConfig();
     expect(config.mode).toBe('readonly');
+  });
+
+  it('parses ask mode correctly', () => {
+    process.env.CLOUD_MAIL_TOKEN = 'test-token-123';
+    process.env.CLOUD_MAIL_MODE = 'ask';
+
+    const config = loadConfig();
+    expect(config.mode).toBe('ask');
   });
 
   it('parses full mode correctly', () => {

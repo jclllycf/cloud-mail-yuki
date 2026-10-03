@@ -50,7 +50,14 @@ export function loadConfig(): ServerConfig {
   }
 
   const rawMode = process.env.CLOUD_MAIL_MODE?.trim().toLowerCase();
-  const mode: CloudMailMode = rawMode === 'full' ? 'full' : 'readonly';
+  let mode: CloudMailMode = 'ask';
+  if (rawMode === 'readonly') {
+    mode = 'readonly';
+  } else if (rawMode === 'full') {
+    mode = 'full';
+  } else {
+    mode = 'ask';
+  }
 
   return {
     apiUrl,

@@ -42,7 +42,11 @@ Cloud Mail Agent 原生支持 **Model Context Protocol (MCP)** 标准，专为 *
 - **极简集成**：沿用单凭证 `CLOUD_MAIL_TOKEN`，无需 OAuth、多级 RBAC 或二次 API Key 膨胀。
 - **两阶段检索**：`cloud_mail_list` / `cloud_mail_search` 仅返回紧凑元数据，按需通过 `cloud_mail_get` 提取正文，杜绝 LLM 上下文爆炸。
 - **验证码秒取**：`cloud_mail_get_verification_code` 专有工具，< 100 token 极简返回，优先复用 D1 Workers AI 提取结果。
-- **双重安全模式**：默认 `CLOUD_MAIL_MODE=readonly`，拦截写操作；`full` 模式下支持发信、软删除与隔离邮箱创建。
+- **三档安全模式**：
+  - `readonly`：本地绝对拦截一切发信、删信、建箱等写动作（零外部请求）；
+  - `ask`（**推荐/默认**）：读操作自动放行，写操作交由 MCP 宿主（如 Codex / Claude Approval 交互）由用户批准后才执行；
+  - `full`：Agent 自主全权执行，适合全自动场景。
+- **标准风险注解**：发信声明 `openWorldHint: true`（不可逆外部通信副作用）与 `destructiveHint: true`，软删除声明 `destructiveHint: true`。
 
 👉 **详细集成与配置教程请查看：[MCP Setup & Integration Guide](docs/MCP_SETUP_GUIDE.md)**
 

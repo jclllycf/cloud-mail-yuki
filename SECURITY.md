@@ -14,17 +14,27 @@ Cloud Mail Agent is designed with a defense-in-depth approach for AI-integrated 
 
 ---
 
-## 2. Mode Separation (`readonly` vs `full`)
+## 2. Mode Separation (`readonly` vs `ask` vs `full`)
 
 The MCP server enforces runtime operation modes via the `CLOUD_MAIL_MODE` environment variable:
 
-| Mode | Allowed Tools | Blocked Operations |
-| :--- | :--- | :--- |
-| `readonly` **(Default)** | `cloud_mail_list`<br>`cloud_mail_search`<br>`cloud_mail_get`<br>`cloud_mail_get_verification_code`<br>`cloud_mail_get_attachment` | `cloud_mail_send`<br>`cloud_mail_delete`<br>`cloud_mail_create_mailbox` |
-| `full` | All 8 tools enabled | None (Client confirmation recommended) |
+| Mode | READ Tools | WRITE Tools | Host Approval Required |
+| :--- | :--- | :--- | :--- |
+| `readonly` | Allowed | **Blocked Locally** (Zero API calls) | N/A (Server hard rejects) |
+| `ask` **(Default & Recommended)** | **Auto Allowed** | **Enabled with Host Approval** | **Yes** (User prompts via Codex / Client) |
+| `full` | Allowed | **Direct Execution** | Optional / Client-configured |
 
-- In `readonly` mode, attempts to invoke mutating tools fail immediately with a `403 Forbidden` descriptive error without transmitting network requests to Cloud Mail.
-- Mutating tools are explicitly tagged with `readOnlyHint: false` and `destructiveHint: true` in the MCP protocol metadata to trigger client UI confirmation prompts (e.g., in Codex and Claude Desktop).
+### Tool Risk Classification & Semantic Annotations
+MCP protocol annotations are provided to guide client approval prompts:
+
+- **READ Tools** (`cloud_mail_list`, `cloud_mail_search`, `cloud_mail_get`, `cloud_mail_get_verification_code`, `cloud_mail_get_attachment`):
+  `readOnlyHint: true` — completely safe, auto-executed by hosts.
+- **`cloud_mail_send`**:
+  `readOnlyHint: false`, `destructiveHint: true`, `openWorldHint: true` — high-risk operation with irreversible external communication side effects.
+- **`cloud_mail_delete`**:
+  `readOnlyHint: false`, `destructiveHint: true` — soft-delete action moving email to Trash.
+- **`cloud_mail_create_mailbox`**:
+  `readOnlyHint: false`, `destructiveHint: false` — creates a new address under your domain.
 
 ---
 

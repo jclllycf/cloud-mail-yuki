@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export type CloudMailMode = 'readonly' | 'full';
+export type CloudMailMode = 'readonly' | 'ask' | 'full';
 
 export interface ServerConfig {
   apiUrl: string;
