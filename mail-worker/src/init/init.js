@@ -44,11 +44,17 @@ const dbInit = {
 	},
 
 	async yukiMailBrandDefaults(c) {
-		const legacyNotice = '本项目仅供学习交流，禁止用于违法业务\n<br>\n请遵守当地法规，作者不承担任何法律责任';
 		const welcomeNotice = 'Welcome to Yuki Mail<br><em>A quiet place for your letters.</em>';
 		await c.env.db.prepare(`UPDATE setting SET title = 'Yuki Mail' WHERE title = '' OR title = 'Cloud Mail'`).run();
-		await c.env.db.prepare(`UPDATE setting SET notice_title = 'Welcome to Yuki Mail' WHERE notice_title = '' OR notice_title = 'Cloud Mail'`).run();
-		await c.env.db.prepare(`UPDATE setting SET notice_content = ? WHERE notice_content = '' OR notice_content = ?`).bind(welcomeNotice, legacyNotice).run();
+		await c.env.db.prepare(`
+			UPDATE setting
+			SET notice_title = 'Welcome to Yuki Mail', notice_content = ?
+			WHERE notice_title = ''
+			   OR notice_title = 'Cloud Mail'
+			   OR notice_content = ''
+			   OR notice_content LIKE '%本项目仅供学习交流%'
+			   OR notice_content LIKE '%禁止用于违法业务%'
+		`).bind(welcomeNotice).run();
 	},
 
 	async v3_3DB(c) {

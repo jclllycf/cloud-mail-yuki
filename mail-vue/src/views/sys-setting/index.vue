@@ -445,15 +445,30 @@
             <div class="card-title">{{ $t('about') }}</div>
             <div class="card-content">
               <section class="yuki-about">
-                <h3>Yuki Mail</h3>
-                <p>A warm, lightweight, and personal little place for email.</p>
-                <p>Designed to make everyday mail feel a little quieter, simpler, and more personal.</p>
-                <p>Designed &amp; maintained by <strong>YUKI</strong></p>
-                <p><strong>Version:</strong> {{ currentVersion }}</p>
-                <div class="yuki-about-links">
-                  <a href="https://mail.jcllyuki.com" target="_blank" rel="noreferrer">Website: mail.jcllyuki.com</a>
-                  <a href="mailto:jclllycf@gmail.com">Contact: jclllycf@gmail.com</a>
-                  <a href="https://github.com/jclllycf/cloud-mail-yuki/issues" target="_blank" rel="noreferrer">Support / Feedback: GitHub Issues</a>
+                <div class="yuki-about-brand">
+                  <span class="yuki-about-mark"><LetterIcon name="mail" width="20" height="20"/></span>
+                  <div>
+                    <strong>Yuki Mail</strong>
+                    <small>A quiet place for your letters.</small>
+                  </div>
+                </div>
+                <div class="yuki-about-row">
+                  <span>Version</span>
+                  <span class="yuki-version">{{ currentVersion }}</span>
+                </div>
+                <div class="yuki-about-row">
+                  <span>Links</span>
+                  <div class="yuki-about-links">
+                    <a href="https://mail.jcllyuki.com" target="_blank" rel="noreferrer" title="Website" aria-label="Yuki Mail website">
+                      <LetterIcon name="link" width="18" height="18"/><span>Website</span>
+                    </a>
+                    <a href="mailto:jclllycf@gmail.com" title="Contact" aria-label="Contact YUKI">
+                      <LetterIcon name="mail" width="18" height="18"/><span>Contact</span>
+                    </a>
+                    <a href="https://github.com/jclllycf/cloud-mail-yuki/issues" target="_blank" rel="noreferrer" title="Support" aria-label="Yuki Mail support">
+                      <LetterIcon name="github" width="18" height="18"/><span>Support</span>
+                    </a>
+                  </div>
                 </div>
               </section>
               <details class="yuki-credits">
@@ -2242,12 +2257,20 @@ function editSetting(settingForm, refreshStatus = true) {
   }
 }
 
-.yuki-about { display:grid; gap:10px; max-width:620px; color:var(--letter-ink); }
-.yuki-about h3 { margin:0; font-size:18px; }
-.yuki-about p { margin:0; line-height:1.55; color:var(--letter-muted); }
-.yuki-about-links { display:flex; flex-wrap:wrap; gap:8px 20px; margin-top:3px; }
-.yuki-about a,.yuki-credits a { color:var(--letter-accent); text-decoration:underline; text-underline-offset:3px; }
-.yuki-credits { margin-top:22px; padding-top:16px; border-top:1px solid var(--letter-line); color:var(--letter-muted); font-size:12px; }
+.yuki-about { display:grid; gap:14px; max-width:620px; color:var(--letter-ink); }
+.yuki-about-brand { display:flex; align-items:center; gap:10px; }
+.yuki-about-brand > div { display:grid; gap:2px; }
+.yuki-about-brand strong { font-size:16px; }
+.yuki-about-brand small { color:var(--letter-muted); }
+.yuki-about-mark { width:34px; height:34px; display:grid; place-items:center; border:1px solid var(--letter-line); border-radius:9px; color:var(--letter-accent); background:var(--letter-surface-paper); }
+.yuki-about-row { display:flex; align-items:center; gap:14px; min-height:34px; }
+.yuki-about-row > span:first-child { width:58px; color:var(--letter-muted); }
+.yuki-version { display:inline-flex; align-items:center; min-height:30px; padding:0 10px; border:1px solid var(--letter-line); border-radius:7px; background:var(--letter-surface-paper); }
+.yuki-about-links { display:flex; flex-wrap:wrap; gap:8px; }
+.yuki-about-links a { display:inline-flex; align-items:center; gap:6px; min-height:32px; padding:0 10px; color:var(--letter-ink); text-decoration:none; border:1px solid var(--letter-line); border-radius:7px; background:var(--letter-surface-paper); transition:background-color 160ms ease,border-color 160ms ease,color 160ms ease; }
+.yuki-about-links a:hover { color:var(--letter-accent); border-color:var(--letter-accent); background:var(--letter-selected); }
+.yuki-credits a { color:var(--letter-accent); text-decoration:underline; text-underline-offset:3px; }
+.yuki-credits { margin-top:18px; padding-top:14px; border-top:1px solid var(--letter-line); color:var(--letter-muted); font-size:12px; }
 .yuki-credits summary { cursor:pointer; color:var(--letter-ink); }
 .yuki-credits p { max-width:680px; line-height:1.6; }
 .yuki-credits small { display:block; margin-top:10px; }
