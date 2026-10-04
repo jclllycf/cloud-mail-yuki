@@ -1,0 +1,12 @@
+{
+  "notice": "All showcase content below is fictional and was created solely for product presentation.",
+  "account": { "name": "Mira Lane", "address": "mira@willow.example" },
+  "messages": [
+    { "sender": "Rowan Studio", "address": "hello@rowan-studio.example", "subject": "A little color for the weekend", "preview": "We gathered a few quiet ideas for your reading corner...", "time": "9:42 AM", "unread": true, "tone": "sage" },
+    { "sender": "The Sunday Letter", "address": "letters@sunday-journal.example", "subject": "Your Sunday reading list", "preview": "Three thoughtful stories, one good recipe, and a place to begin.", "time": "8:15 AM", "unread": true, "tone": "clay" },
+    { "sender": "Nora at Fieldnotes", "address": "nora@fieldnotes.example", "subject": "Re: the little garden plan", "preview": "That sounds lovely. I’ll bring the seed packets along.", "time": "Yesterday", "unread": false, "tone": "lavender" },
+    { "sender": "Paper & Pine", "address": "care@paper-pine.example", "subject": "Your order is on its way", "preview": "A small parcel of notebooks is making its way to you.", "time": "Yesterday", "unread": false, "tone": "sand" },
+    { "sender": "Avery Chen", "address": "avery@studio-fern.example", "subject": "", "preview": "Hi Mira, just checking whether Thursday afternoon still works...", "time": "Tue", "unread": false, "tone": "sage" }
+  ],
+  "analytics": { "received": 1284, "sent": 496, "accounts": 6, "activePeople": 42, "monthly": [64, 82, 76, 101, 94, 122, 115, 139, 126, 157, 149, 184] }
+}

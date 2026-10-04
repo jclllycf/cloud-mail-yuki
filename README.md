@@ -1,177 +1,64 @@
-<p align="center">
-    <img src="doc/demo/logo.png" width="80px" />
-    <h1 align="center">Cloud Mail Agent</h1>
-    <p align="center"><strong>Cloud Mail Agent</strong> — Turn Cloud Mail into an MCP-native mailbox for Codex, Claude, Antigravity and other AI agents.</p>
-    <p align="center">基于 Cloudflare 的简约响应式邮箱服务与 Agent-Native 邮件基础设施，支持邮件收发、两阶段上下文检索与 8 大 MCP 工具 🎉</p> 
-    <p align="center">
-        简体中文 | <a href="/README-en.md" style="margin-left: 5px">English </a>
-    </p>
-    <p align="center">
-        <a href="https://github.com/maillab/cloud-mail/tree/main?tab=MIT-1-ov-file" target="_blank" >
-            <img src="https://img.shields.io/badge/license-MIT-green" />
-        </a>    
-        <a href="https://github.com/maillab/cloud-mail/releases" target="_blank" >
-            <img src="https://img.shields.io/github/v/release/maillab/cloud-mail" alt="releases" />
-        </a>  
-        <a href="https://github.com/maillab/cloud-mail/issues" >
-            <img src="https://img.shields.io/github/issues/maillab/cloud-mail" alt="issues" />
-        </a>  
-        <a href="https://github.com/maillab/cloud-mail/stargazers" target="_blank">
-            <img src="https://img.shields.io/github/stars/maillab/cloud-mail" alt="stargazers" />
-        </a>  
-        <a href="https://github.com/maillab/cloud-mail/forks" target="_blank" >
-            <img src="https://img.shields.io/github/forks/maillab/cloud-mail" alt="forks" />
-        </a>
-    </p>
-    <p align="center">
-        <a href="https://trendshift.io/repositories/20459" target="_blank" >
-            <img src="https://trendshift.io/api/badge/repositories/20459" alt="trendshift" >
-        </a>
-    </p>
-</p>
+<div align="center">
+  <h1>Yuki Mail</h1>
+  <p><em>A quiet place for your letters.</em></p>
+  <p>Yuki Mail is a warm, lightweight, and personal webmail experience built around clarity, comfort, and everyday use.</p>
+  <p><a href="https://mail.jcllyuki.com">mail.jcllyuki.com</a> · <a href="mailto:jclllycf@gmail.com">Contact</a></p>
+</div>
 
+## A calmer place for everyday mail
 
-## 项目简介
+Yuki Mail is a warm, lightweight, and personal little place for email. Its quiet workspace keeps everyday correspondence clear and comfortable, with three carefully tuned appearances.
 
-只需要一个域名，就可以创建多个不同的邮箱，类似各大邮箱平台，本项目支持部署到 Cloudflare Workers ，降低服务器成本，搭建自己的邮箱服务。
+### Three appearances
 
-## 🤖 AI Agent & MCP 原生支持
+- **Clay Letter** — warm paper, clay accents, and a quiet desk. Default theme.
+- **Sage Garden** — natural ivory surfaces with gentle sage accents.
+- **Cocoa Night** — warm charcoal, cream text, and muted copper accents.
 
-Cloud Mail Agent 原生支持 **Model Context Protocol (MCP)** 标准，专为 **OpenAI Codex**、**Claude Code / Desktop**、**Antigravity**、**Cursor** 等 AI Coding Agent 设计：
+The three themes share one layout and component system. Choose **Appearance** in Settings; your choice is saved on this device.
 
-- **极简集成**：沿用单凭证 `CLOUD_MAIL_TOKEN`，无需 OAuth、多级 RBAC 或二次 API Key 膨胀。
-- **两阶段检索**：`cloud_mail_list` / `cloud_mail_search` 仅返回紧凑元数据，按需通过 `cloud_mail_get` 提取正文，杜绝 LLM 上下文爆炸。
-- **验证码秒取**：`cloud_mail_get_verification_code` 专有工具，< 100 token 极简返回，优先复用 D1 Workers AI 提取结果。
-- **三档安全模式**：
-  - `readonly`：本地绝对拦截一切发信、删信、建箱等写动作（零外部请求）；
-  - `ask`（**推荐/默认**）：读操作自动放行，写操作交由 MCP 宿主（如 Codex / Claude Approval 交互）由用户批准后才执行；
-  - `full`：Agent 自主全权执行，适合全自动场景。
-- **标准风险注解**：发信声明 `openWorldHint: true`（不可逆外部通信副作用）与 `destructiveHint: true`，软删除声明 `destructiveHint: true`。
+## Product showcase
 
-👉 **详细集成与配置教程请查看：[MCP Setup & Integration Guide](docs/MCP_SETUP_GUIDE.md)**
+All people, messages, addresses, and analytics shown below are fictional demo content created for this showcase. No live mailbox data is included.
 
+| Inbox | Analytics |
+|:--|:--|
+| ![Yuki Mail inbox showcase](showcase/assets/inbox.jpg) | ![Yuki Mail fictional analytics showcase](showcase/assets/analytics.jpg) |
 
-## 项目展示
+| Reader | Compose |
+|:--|:--|
+| ![Yuki Mail reader showcase](showcase/assets/reader.jpg) | ![Yuki Mail compose showcase](showcase/assets/compose.jpg) |
 
-- [在线演示](https://skymail.ink)<br>
-- [部署文档](https://doc.skymail.ink)<br>
+| Settings and themes | Mobile inbox |
+|:--|:--|
+| ![Yuki Mail settings and themes showcase](showcase/assets/settings-themes.jpg) | ![Yuki Mail mobile showcase](showcase/assets/mobile.jpg) |
 
-| ![](/doc/demo/demo1.png) | ![](/doc/demo/demo2.png) |
-|-----------------------|-----------------------|
-| ![](/doc/demo/demo3.png) | ![](/doc/demo/demo4.png) |
+## About
 
+**Yuki Mail**
 
+A warm, lightweight, and personal little place for email.
 
+Designed to make everyday mail feel a little quieter, simpler, and more personal.
 
-## 功能介绍
+Designed & maintained by **YUKI**
 
-- **💰 低成本使用**： 可部署到 Cloudflare Workers 降低服务器成本
+- Website: [mail.jcllyuki.com](https://mail.jcllyuki.com)
+- Contact: [jclllycf@gmail.com](mailto:jclllycf@gmail.com)
 
-- **💻 响应式设计**：响应式布局自动适配PC和大部分手机端浏览器
+## Open-source acknowledgements
 
-- **📧 邮件发送**：集成Resend发送邮件，支持群发，内嵌图片和附件发送，发送状态查看
+Yuki Mail is based on [Cloud Mail by maillab](https://github.com/maillab/cloud-mail). The upstream MIT License and copyright notice are preserved in [`LICENSE`](LICENSE).
 
-- **🛡️ 管理员功能**：可以对用户，邮件进行管理，RABC权限控制对功能及使用资源限制
+The upstream project’s use note is retained here as secondary context, separate from Yuki Mail’s welcome and product identity: “本项目仅供学习交流，禁止用于违法业务。请遵守当地法规，作者不承担任何法律责任。”
 
-- **📦 附件收发**：支持收发附件，使用R2对象存储保存和下载文件
+## Development
 
-- **🔔 邮件推送**：接收邮件后可以转发到TG机器人或其他服务商邮箱
+The application is in `mail-vue/` (Vue 3 + Vite) and `mail-worker/` (Cloudflare Workers). See the respective package manifests and upstream documentation for local development and deployment configuration. Never commit `.env` files or deployment credentials.
 
-- **📡 开放API**：支持使用API批量生成用户，多条件查询邮件 
+The showcase source and its fictional data live under [`showcase/`](showcase/); showcase assets are documentation only and are not part of the production frontend bundle.
 
-- **🔢 验证码识别**：使用Workers AI，自动识别邮件验证码 
+## License
 
-- **📈 数据可视化**：使用ECharts对系统数据详情，用户邮件增长可视化显示
-
-- **🎨 个性化设置**：可以自定义网站标题，登录背景，透明度
-
-- **🤖 人机验证**：集成Turnstile人机验证，防止人机批量注册
-
-- **📜 更多功能**：正在开发中...
-
-
-
-## 技术栈
-
-- **平台**：[Cloudflare Workers](https://developers.cloudflare.com/workers/)
-
-- **Web框架**：[Hono](https://hono.dev/)
-
-- **ORM：**[Drizzle](https://orm.drizzle.team/)
-
-- **前端框架**：[Vue3](https://vuejs.org/) 
-
-- **UI框架**：[Element Plus](https://element-plus.org/) 
-
-- **邮件推送：** [Resend](https://resend.com/)
-
-- **缓存**：[Cloudflare KV](https://developers.cloudflare.com/kv/)
-
-- **数据库**：[Cloudflare D1](https://developers.cloudflare.com/d1/)
-
-- **文件存储**：[Cloudflare R2](https://developers.cloudflare.com/r2/)
-
-## 目录结构
-
-```
-cloud-mail
-├── mail-worker				    # worker后端项目
-│   ├── src                  
-│   │   ├── api	 			    # api接口层			
-│   │   ├── const  			    # 项目常量
-│   │   ├── dao                 # 数据访问层
-│   │   ├── email			    # 邮件处理接收
-│   │   ├── entity			    # 数据库实体
-│   │   ├── error			    # 自定义异常
-│   │   ├── hono			    # web框架配置、拦截器、全局异常等
-│   │   ├── i18n			    # 语言国际化
-│   │   ├── init			    # 数据库缓存初始化
-│   │   ├── model			    # 响应体数据封装
-│   │   ├── security			# 身份权限认证
-│   │   ├── service			    # 业务服务层
-│   │   ├── template			# 消息模板
-│   │   ├── utils			    # 工具类
-│   │   └── index.js			# 入口文件
-│   ├── pageckge.json			# 项目依赖
-│   └── wrangler.toml			# 项目配置
-│
-├── mail-vue				    # vue前端项目
-│   ├── src
-│   │   ├── axios 			    # axios配置
-│   │   ├── components			# 自定义组件
-│   │   ├── echarts			    # echarts组件导入
-│   │   ├── i18n			    # 语言国际化
-│   │   ├── init			    # 入站初始化
-│   │   ├── layout			    # 主体布局组件
-│   │   ├── perm			    # 权限认证
-│   │   ├── request			    # api接口
-│   │   ├── router			    # 路由配置
-│   │   ├── store			    # 全局状态管理
-│   │   ├── utils			    # 工具类
-│   │   ├── views			    # 页面组件
-│   │   ├── app.vue			    # 入口组件
-│   │   ├── main.js			    # 入口js
-│   │   └── style.css			# 全局css
-│   ├── package.json			# 项目依赖
-└── └── env.release				# 项目配置
-```
-
-## 赞助
-
-<a href="https://doc.skymail.ink/support.html" >
-<img width="170px" src="./doc/images/support.png" alt="">
-</a>
-
-## 许可证与致谢
-
-本项目采用 [MIT](LICENSE) 许可证。
-
-本项目基于上游开源项目 [maillab/cloud-mail](https://github.com/maillab/cloud-mail) 进行扩展开发，保留原作者的版权与 MIT 许可声明。衷心感谢原作者及开源社区贡献者的卓越工作！
-
-
-## 交流
-
-[Telegram](https://t.me/cloud_mail_tg)
-
-
+MIT. See [`LICENSE`](LICENSE) for the complete license text and retained copyright notice.
 

@@ -444,52 +444,23 @@
           <div class="settings-card about">
             <div class="card-title">{{ $t('about') }}</div>
             <div class="card-content">
-              <div class="concerning-item">
-                <span>{{ $t('version') }} :</span>
-                <el-badge is-dot :hidden="!hasUpdate">
-                  <el-button @click="jump('https://github.com/maillab/cloud-mail/releases')">
-                    {{ currentVersion }}
-                    <template #icon>
-                      <LetterIcon name="version" style="font-size: 20px" color="#1890FF"/>
-                    </template>
-                  </el-button>
-                </el-badge>
-              </div>
-              <div class="concerning-item">
-                <span>{{ $t('community') }} : </span>
-                <div class="community">
-                  <el-button @click="jump('https://github.com/maillab/cloud-mail')">
-                    Github
-                    <template #icon>
-                      <LetterIcon name="github" width="22" height="22"/>
-                    </template>
-                  </el-button>
-                  <el-button @click="jump('https://t.me/cloud_mail_tg')">
-                    Telegram
-                    <template #icon>
-                      <LetterIcon name="send" width="30" height="30"/>
-                    </template>
-                  </el-button>
+              <section class="yuki-about">
+                <h3>Yuki Mail</h3>
+                <p>A warm, lightweight, and personal little place for email.</p>
+                <p>Designed to make everyday mail feel a little quieter, simpler, and more personal.</p>
+                <p>Designed &amp; maintained by <strong>YUKI</strong></p>
+                <div class="yuki-about-links">
+                  <a href="https://mail.jcllyuki.com" target="_blank" rel="noreferrer">Website: mail.jcllyuki.com</a>
+                  <a href="mailto:jclllycf@gmail.com">Contact: jclllycf@gmail.com</a>
                 </div>
-              </div>
-              <div class="concerning-item">
-                <span>{{ $t('support') }} : </span>
-                <el-button @click="jump('https://doc.skymail.ink/support.html')">
-                  {{ t('supportDesc') }}
-                  <template #icon>
-                    <LetterIcon color="#79D6B5" name="coffee" width="20" height="20"/>
-                  </template>
-                </el-button>
-              </div>
-              <div class="concerning-item">
-                <span>{{ $t('help') }} : </span>
-                <el-button @click="jump('https://doc.skymail.ink')">
-                  {{ t('document') }}
-                  <template #icon>
-                    <LetterIcon color="#79D6B5" name="document" width="18" height="18"/>
-                  </template>
-                </el-button>
-              </div>
+              </section>
+              <details class="yuki-credits">
+                <summary>Open-source acknowledgements / Credits</summary>
+                <p>Yuki Mail is based on Cloud Mail by maillab and is distributed under the MIT License. Copyright notices and license terms are preserved in the repository LICENSE file.</p>
+                <a href="https://github.com/maillab/cloud-mail" target="_blank" rel="noreferrer">Cloud Mail source and acknowledgements</a>
+                <p>Upstream use note: 本项目仅供学习交流，禁止用于违法业务。请遵守当地法规，作者不承担任何法律责任。</p>
+                <small>{{ $t('version') }}: {{ currentVersion }}<span v-if="hasUpdate"> · Update available</span></small>
+              </details>
             </div>
           </div>
         </div>
@@ -2268,6 +2239,16 @@ function editSetting(settingForm, refreshStatus = true) {
     font-weight: normal;
   }
 }
+
+.yuki-about { display:grid; gap:10px; max-width:620px; color:var(--letter-ink); }
+.yuki-about h3 { margin:0; font-size:18px; }
+.yuki-about p { margin:0; line-height:1.55; color:var(--letter-muted); }
+.yuki-about-links { display:flex; flex-wrap:wrap; gap:8px 20px; margin-top:3px; }
+.yuki-about a,.yuki-credits a { color:var(--letter-accent); text-decoration:underline; text-underline-offset:3px; }
+.yuki-credits { margin-top:22px; padding-top:16px; border-top:1px solid var(--letter-line); color:var(--letter-muted); font-size:12px; }
+.yuki-credits summary { cursor:pointer; color:var(--letter-ink); }
+.yuki-credits p { max-width:680px; line-height:1.6; }
+.yuki-credits small { display:block; margin-top:10px; }
 
 form .el-button {
   margin-top: 10px;

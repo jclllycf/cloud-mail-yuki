@@ -33,6 +33,7 @@ const dbInit = {
 		await this.v3_1DB(c);
 		await this.v3_2DB(c);
 		await this.v3_3DB(c);
+		await this.yukiMailBrandDefaults(c);
 		await settingService.refresh(c);
 		try {
 			await telegramService.setupWebhook(c);
@@ -40,6 +41,14 @@ const dbInit = {
 			console.warn('Auto setup Telegram Webhook failed during init:', e.message);
 		}
 		return c.text('success');
+	},
+
+	async yukiMailBrandDefaults(c) {
+		const legacyNotice = '本项目仅供学习交流，禁止用于违法业务\n<br>\n请遵守当地法规，作者不承担任何法律责任';
+		const welcomeNotice = 'Welcome to Yuki Mail<br><em>A quiet place for your letters.</em>';
+		await c.env.db.prepare(`UPDATE setting SET title = 'Yuki Mail' WHERE title = '' OR title = 'Cloud Mail'`).run();
+		await c.env.db.prepare(`UPDATE setting SET notice_title = 'Welcome to Yuki Mail' WHERE notice_title = '' OR notice_title = 'Cloud Mail'`).run();
+		await c.env.db.prepare(`UPDATE setting SET notice_content = ? WHERE notice_content = '' OR notice_content = ?`).bind(welcomeNotice, legacyNotice).run();
 	},
 
 	async v3_3DB(c) {
@@ -272,9 +281,7 @@ const dbInit = {
 
 	async v1_6DB(c) {
 
-		const noticeContent = '本项目仅供学习交流，禁止用于违法业务\n' +
-			'<br>\n' +
-			'请遵守当地法规，作者不承担任何法律责任'
+		const noticeContent = 'Welcome to Yuki Mail<br><em>A quiet place for your letters.</em>'
 
 		const ADD_COLUMN_SQL_LIST = [
 			`ALTER TABLE setting ADD COLUMN reg_verify_count INTEGER NOT NULL DEFAULT 1;`,
@@ -286,7 +293,7 @@ const dbInit = {
 				type INTEGER NOT NULL DEFAULT 0,
 				update_time DATETIME DEFAULT CURRENT_TIMESTAMP
       )`,
-			`ALTER TABLE setting ADD COLUMN notice_title TEXT NOT NULL DEFAULT 'Cloud Mail';`,
+			`ALTER TABLE setting ADD COLUMN notice_title TEXT NOT NULL DEFAULT 'Welcome to Yuki Mail';`,
 			`ALTER TABLE setting ADD COLUMN notice_content TEXT NOT NULL DEFAULT '';`,
 			`ALTER TABLE setting ADD COLUMN notice_type TEXT NOT NULL DEFAULT 'none';`,
 			`ALTER TABLE setting ADD COLUMN notice_duration INTEGER NOT NULL DEFAULT 0;`,
@@ -693,7 +700,7 @@ const dbInit = {
 			  INSERT INTO setting (
 				register, receive, add_email, many_email, title, auto_refresh, register_verify, add_email_verify
 			  )
-			  SELECT 0, 0, 0, 0, 'Cloud Mail', 0, 1, 1
+		  SELECT 0, 0, 0, 0, 'Yuki Mail', 0, 1, 1
 			  WHERE NOT EXISTS (SELECT 1 FROM setting)
 			`).run();
 		} catch (e) {

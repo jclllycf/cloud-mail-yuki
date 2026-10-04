@@ -1,6 +1,6 @@
 <template>
   <aside class="letter-navigation" :aria-label="$t('letter.navigation')">
-    <div class="letter-brand"><span class="brand-mark"><LetterIcon name="mail" /></span><div><strong>{{ settingStore.settings.title }}</strong><small>Warm Letter</small></div><button class="letter-button letter-icon-button sidebar-close" :aria-label="$t('letter.close')" @click="ui.asideShow=false"><LetterIcon name="close" /></button></div>
+    <div class="letter-brand"><span class="brand-mark"><LetterIcon name="mail" /></span><div><strong>{{ settingStore.settings.title || 'Yuki Mail' }}</strong><small>YUKI</small></div><button class="letter-button letter-icon-button sidebar-close" :aria-label="$t('letter.close')" @click="ui.asideShow=false"><LetterIcon name="close" /></button></div>
     <button class="letter-account-entry" @click="openAccount" :disabled="!canSwitch" :aria-label="$t('letter.accountSwitch')">
       <span class="letter-identity">{{ (account.currentAccount.name || account.currentAccount.email || user.user.email || 'Y')[0]?.toUpperCase() }}</span>
       <span class="account-label"><strong>{{ account.currentAccount.name || user.user.name }}</strong><small>{{ account.currentAccount.email || user.user.email }}</small></span><LetterIcon name="chevron" v-if="canSwitch" />

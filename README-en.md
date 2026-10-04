@@ -1,148 +1,52 @@
-<p align="center">
-    <img src="doc/demo/logo.png" width="80px" />
-    <h1 align="center">Cloud Mail</h1>
-    <p align="center">A simple, responsive email service designed to run on Cloudflare Workers 🎉</p> 
-    <p align="center">
-       <a href="/README.md" style="margin-left: 5px">简体中文</a> | English 
-    </p>
-    <p align="center">
-        <a href="https://github.com/maillab/cloud-mail/tree/main?tab=MIT-1-ov-file" target="_blank" >
-            <img src="https://img.shields.io/badge/license-MIT-green" />
-        </a>    
-        <a href="https://github.com/maillab/cloud-mail/releases" target="_blank" >
-            <img src="https://img.shields.io/github/v/release/maillab/cloud-mail" alt="releases" />
-        </a>  
-        <a href="https://github.com/maillab/cloud-mail/issues" >
-            <img src="https://img.shields.io/github/issues/maillab/cloud-mail" alt="issues" />
-        </a>  
-        <a href="https://github.com/maillab/cloud-mail/stargazers" target="_blank">
-            <img src="https://img.shields.io/github/stars/maillab/cloud-mail" alt="stargazers" />
-        </a>  
-        <a href="https://github.com/maillab/cloud-mail/forks" target="_blank" >
-            <img src="https://img.shields.io/github/forks/maillab/cloud-mail" alt="forks" />
-        </a>
-    </p>
-    <p align="center">
-        <a href="https://trendshift.io/repositories/20459" target="_blank" >
-            <img src="https://trendshift.io/api/badge/repositories/20459" alt="trendshift" >
-        </a>
-    </p>
-</p>
+# Yuki Mail
 
-## Description
-With only one domain, you can create multiple different email addresses, similar to major email platforms. This project can be deployed on Cloudflare Workers to reduce server costs and build your own email service.
-## Project Showcase
+*A quiet place for your letters.*
 
-- [Live Demo](https://skymail.ink)<br>
-- [Deployment Guide](https://doc.skymail.ink/en/)<br>
+Yuki Mail is a warm, lightweight, and personal webmail experience built around clarity, comfort, and everyday use.
 
+[Open Yuki Mail](https://mail.jcllyuki.com) · [Contact](mailto:jclllycf@gmail.com)
 
-| ![](/doc/demo/demo1.png) | ![](/doc/demo/demo2.png) |
-|--------------------------|--------------------------|
-| ![](/doc/demo/demo3.png) | ![](/doc/demo/demo4.png) |
+## Three appearances
 
-## Features
+- **Clay Letter** — warm paper and clay; the default.
+- **Sage Garden** — ivory and natural sage.
+- **Cocoa Night** — warm charcoal, cream, and muted copper.
 
-- **💰 Low-Cost Usage**: No server required — deploy to Cloudflare Workers to reduce costs.
+## Product showcase
 
-- **💻 Responsive Design**: Automatically adapts to both desktop and most mobile browsers.
+All names, mail, addresses, and analytics in these images are fictional demo content. No live mailbox data is shown.
 
-- **📧 Email Sending**: Integrated with Resend, supporting bulk email sending and attachments.
+| Inbox | Analytics |
+|:--|:--|
+| ![Fictional inbox](showcase/assets/inbox.jpg) | ![Fictional analytics](showcase/assets/analytics.jpg) |
 
-- **🛡️ Admin Features**: Admin controls for user and email management with RBAC-based access control.
+| Reader | Compose |
+|:--|:--|
+| ![Fictional reader](showcase/assets/reader.jpg) | ![Compose](showcase/assets/compose.jpg) |
 
-- **📦 Attachment Support**: Send and receive attachments, stored and downloaded via R2 object storage.
+| Settings and themes | Mobile inbox |
+|:--|:--|
+| ![Theme settings](showcase/assets/settings-themes.jpg) | ![Mobile inbox](showcase/assets/mobile.jpg) |
 
-- **🔔 Email Push**: Forward received emails to Telegram bots or other email providers.
+## About
 
-- **📡 Open API**: Supports batch user creation via API and multi-condition email queries
+**Yuki Mail** is a warm, lightweight, and personal little place for email. Designed to make everyday mail feel a little quieter, simpler, and more personal.
 
-- **🔢 Verification Code Recognition**: Auto-detect codes via Workers AI
+Designed & maintained by **YUKI**
 
-- **📈 Data Visualization**: Use ECharts to visualize system data, including user email growth.
+- Website: [mail.jcllyuki.com](https://mail.jcllyuki.com)
+- Contact: [jclllycf@gmail.com](mailto:jclllycf@gmail.com)
 
-- **🎨 Personalization**: Customize website title, login background, and transparency.
+## Open-source acknowledgements
 
-- **🤖 CAPTCHA**: Integrated with Turnstile CAPTCHA to prevent automated registration.
+Based on [Cloud Mail by maillab](https://github.com/maillab/cloud-mail). The upstream MIT License and copyright notice remain in [`LICENSE`](LICENSE).
 
-- **📜 More Features**: Under development...
+The upstream project’s use note is retained as secondary context, separate from the Yuki Mail welcome: “For learning and exchange only; use for unlawful business is prohibited. Please comply with local laws. The original author accepts no legal liability.”
 
-## Tech Stack
+## Development
 
-- **Platform**: [Cloudflare Workers](https://developers.cloudflare.com/workers/)
-
-- **Web Framework**: [Hono](https://hono.dev/)
-
-- **ORM**: [Drizzle](https://orm.drizzle.team/)
-
-- **Frontend Framework**: [Vue3](https://vuejs.org/)
-
-- **UI Framework**: [Element Plus](https://element-plus.org/)
-
-- **Email Service**: [Resend](https://resend.com/)
-
-- **Cache**: [Cloudflare KV](https://developers.cloudflare.com/kv/)
-
-- **Database**: [Cloudflare D1](https://developers.cloudflare.com/d1/)
-
-- **File Storage**: [Cloudflare R2](https://developers.cloudflare.com/r2/)
-
-## Project Structure
-
-```
-cloud-mail
-├── mail-worker				    # Backend worker project
-│   ├── src                  
-│   │   ├── api	 			    # API layer
-│   │   ├── const  			    # Project constants
-│   │   ├── dao                 # Data access layer
-│   │   ├── email			    # Email processing and handling
-│   │   ├── entity			    # Database entities
-│   │   ├── error			    # Custom exceptions
-│   │   ├── hono			    # Web framework, middleware, error handling
-│   │   ├── i18n			    # Internationalization
-│   │   ├── init			    # Database and cache initialization
-│   │   ├── model			    # Response data models
-│   │   ├── security			# Authentication and authorization
-│   │   ├── service			    # Business logic layer
-│   │   ├── template			# Message templates
-│   │   ├── utils			    # Utility functions
-│   │   └── index.js			# Entry point
-│   ├── package.json			# Project dependencies
-│   └── wrangler.toml			# Project configuration
-│
-├─ mail-vue				        # Frontend Vue project
-│   ├── src
-│   │   ├── axios 			    # Axios configuration
-│   │   ├── components			# Custom components
-│   │   ├── echarts			    # ECharts integration
-│   │   ├── i18n			    # Internationalization
-│   │   ├── init			    # Startup initialization
-│   │   ├── layout			    # Main layout components
-│   │   ├── perm			    # Permissions and access control
-│   │   ├── request			    # API request layer
-│   │   ├── router			    # Router configuration
-│   │   ├── store			    # Global state management
-│   │   ├── utils			    # Utility functions
-│   │   ├── views			    # Page components
-│   │   ├── app.vue			    # Root component
-│   │   ├── main.js			    # Entry JS file
-│   │   └── style.css			# Global styles
-│   ├── package.json			# Project dependencies
-└── └── env.release				# Environment configuration
-
-```
-
-## Sponsor
-
-<a href="https://doc.skymail.ink/support.html">
-<img width="170px" src="./doc/images/support.png" alt="">
-</a>
+The Vue 3 + Vite frontend is in `mail-vue/`; the Cloudflare Worker is in `mail-worker/`. Showcase materials under `showcase/` are documentation-only and are not bundled into the production frontend.
 
 ## License
 
-This project is licensed under the [MIT](LICENSE) license.
-
-## Communication
-
-[Telegram](https://t.me/cloud_mail_tg)
+MIT. See [`LICENSE`](LICENSE).

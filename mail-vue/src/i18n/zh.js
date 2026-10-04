@@ -1,5 +1,5 @@
 const zh = {
-    letter: {"appearance": "外观", "compose": "写一封邮件", "navigation": "导航", "workspace": "工作区", "mail": "邮件", "accountSwitch": "切换与管理邮箱", "desk": "一张安静的书桌。", "notices": "公告", "noSubject": "无主题", "selectAll": "全选邮件", "more": "更多操作", "quiet": "今天这里很安静。", "current": "当前邮箱", "allReceive": "接收所有地址的邮件", "singleReceive": "仅接收此地址的邮件", "fromIdentity": "发件身份", "refresh": "刷新", "back": "返回", "close": "关闭", "download": "下载", "sort": "时间排序", "retry": "重新加载", "loadError": "邮件暂时没有载入，请重试。"},
+    letter: {"appearance": "外观", "compose": "写一封邮件", "navigation": "导航", "workspace": "工作区", "mail": "邮件", "accountSwitch": "切换与管理邮箱", "desk": "给每一封信一个安静的空间。", "notices": "公告", "noSubject": "无主题", "selectAll": "全选邮件", "more": "更多操作", "quiet": "今天这里很安静。", "current": "当前邮箱", "allReceive": "接收所有地址的邮件", "singleReceive": "仅接收此地址的邮件", "fromIdentity": "发件身份", "refresh": "刷新", "back": "返回", "close": "关闭", "download": "下载", "sort": "时间排序", "retry": "重新加载", "loadError": "邮件暂时没有载入，请重试。"},
     inbox: '收件箱',
     drafts: '草稿箱',
     sent: '已发送',
