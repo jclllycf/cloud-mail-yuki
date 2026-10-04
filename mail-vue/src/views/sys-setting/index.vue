@@ -459,12 +459,12 @@
                 <div class="yuki-about-row">
                   <span>Links</span>
                   <div class="yuki-about-links">
-                    <a href="https://mail.jcllyuki.com" target="_blank" rel="noreferrer" title="Website" aria-label="Yuki Mail website">
+                    <a href="https://jcllyuki.com" target="_blank" rel="noreferrer" title="Website" aria-label="YUKI website">
                       <LetterIcon name="link" width="18" height="18"/><span>Website</span>
                     </a>
-                    <a href="mailto:jclllycf@gmail.com" title="Contact" aria-label="Contact YUKI">
+                    <button type="button" @click="copyYukiContact" title="Copy contact email" aria-label="Copy YUKI contact email">
                       <LetterIcon name="mail" width="18" height="18"/><span>Contact</span>
-                    </a>
+                    </button>
                     <a href="https://github.com/jclllycf/cloud-mail-yuki/issues" target="_blank" rel="noreferrer" title="Support" aria-label="Yuki Mail support">
                       <LetterIcon name="github" width="18" height="18"/><span>Support</span>
                     </a>
@@ -1119,6 +1119,24 @@ function getSettings() {
 
 function openNoticePopup() {
   uiStore.showNotice()
+}
+
+async function copyYukiContact() {
+  const email = 'jclllycf@gmail.com'
+  try {
+    await navigator.clipboard.writeText(email)
+    ElMessage({
+      message: 'Copied: ' + email,
+      type: 'success',
+      plain: true
+    })
+  } catch (e) {
+    ElMessage({
+      message: 'Copy failed: ' + email,
+      type: 'error',
+      plain: true
+    })
+  }
 }
 
 function openAddVerifyCount() {
@@ -2267,8 +2285,8 @@ function editSetting(settingForm, refreshStatus = true) {
 .yuki-about-row > span:first-child { width:58px; color:var(--letter-muted); }
 .yuki-version { display:inline-flex; align-items:center; min-height:30px; padding:0 10px; border:1px solid var(--letter-line); border-radius:7px; background:var(--letter-surface-paper); }
 .yuki-about-links { display:flex; flex-wrap:wrap; gap:8px; }
-.yuki-about-links a { display:inline-flex; align-items:center; gap:6px; min-height:32px; padding:0 10px; color:var(--letter-ink); text-decoration:none; border:1px solid var(--letter-line); border-radius:7px; background:var(--letter-surface-paper); transition:background-color 160ms ease,border-color 160ms ease,color 160ms ease; }
-.yuki-about-links a:hover { color:var(--letter-accent); border-color:var(--letter-accent); background:var(--letter-selected); }
+.yuki-about-links a,.yuki-about-links button { display:inline-flex; align-items:center; gap:6px; min-height:32px; padding:0 10px; color:var(--letter-ink); font:inherit; text-decoration:none; border:1px solid var(--letter-line); border-radius:7px; background:var(--letter-surface-paper); cursor:pointer; transition:background-color 160ms ease,border-color 160ms ease,color 160ms ease; }
+.yuki-about-links a:hover,.yuki-about-links button:hover { color:var(--letter-accent); border-color:var(--letter-accent); background:var(--letter-selected); }
 .yuki-credits a { color:var(--letter-accent); text-decoration:underline; text-underline-offset:3px; }
 .yuki-credits { margin-top:18px; padding-top:14px; border-top:1px solid var(--letter-line); color:var(--letter-muted); font-size:12px; }
 .yuki-credits summary { cursor:pointer; color:var(--letter-ink); }

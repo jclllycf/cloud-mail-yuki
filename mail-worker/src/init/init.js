@@ -44,7 +44,7 @@ const dbInit = {
 	},
 
 	async yukiMailBrandDefaults(c) {
-		const welcomeNotice = 'Welcome to Yuki Mail<br><em>A quiet place for your letters.</em>';
+		const welcomeNotice = '<em>A quiet place for your letters.</em>';
 		await c.env.db.prepare(`UPDATE setting SET title = 'Yuki Mail' WHERE title = '' OR title = 'Cloud Mail'`).run();
 		await c.env.db.prepare(`
 			UPDATE setting
@@ -54,6 +54,7 @@ const dbInit = {
 			   OR notice_content = ''
 			   OR notice_content LIKE '%本项目仅供学习交流%'
 			   OR notice_content LIKE '%禁止用于违法业务%'
+			   OR notice_content = 'Welcome to Yuki Mail<br><em>A quiet place for your letters.</em>'
 		`).bind(welcomeNotice).run();
 	},
 
@@ -287,7 +288,7 @@ const dbInit = {
 
 	async v1_6DB(c) {
 
-		const noticeContent = 'Welcome to Yuki Mail<br><em>A quiet place for your letters.</em>'
+		const noticeContent = '<em>A quiet place for your letters.</em>'
 
 		const ADD_COLUMN_SQL_LIST = [
 			`ALTER TABLE setting ADD COLUMN reg_verify_count INTEGER NOT NULL DEFAULT 1;`,
