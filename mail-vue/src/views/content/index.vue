@@ -41,9 +41,9 @@
 import LetterIcon from "@/components/letter-icon.vue"
 import ShadowHtml from '@/components/shadow-html/index.vue'
 import {computed, reactive, ref, watch, onMounted, onUnmounted} from "vue";
-import {useRouter, useRoute} from 'vue-router'
+import {useRouter} from 'vue-router'
 import {ElMessage, ElMessageBox} from 'element-plus'
-import {emailDelete, emailRead, emailDetail} from "@/request/email.js";
+import {emailDelete, emailRead} from "@/request/email.js";
 import {useEmailStore} from "@/store/email.js";
 import {useAccountStore} from "@/store/account.js";
 import {formatDetailDate} from "@/utils/day.js";
