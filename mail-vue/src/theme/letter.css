@@ -1,0 +1,111 @@
+/* Shared component adapters; all theme differences live in themes.js. */
+html[data-theme] {
+  --el-color-primary: var(--letter-accent);
+  --el-color-primary-dark-2: var(--letter-accent-hover);
+  --el-color-primary-light-3: color-mix(in srgb, var(--letter-accent) 80%, var(--letter-surface-paper));
+  --el-color-primary-light-5: color-mix(in srgb, var(--letter-accent) 60%, var(--letter-surface-paper));
+  --el-color-primary-light-7: color-mix(in srgb, var(--letter-accent) 35%, var(--letter-surface-paper));
+  --el-color-primary-light-8: var(--letter-surface-selected);
+  --el-color-primary-light-9: var(--letter-surface-hover);
+  --el-color-success: var(--letter-success); --el-color-success-light-9: var(--letter-success-bg);
+  --el-color-danger: var(--letter-error); --el-color-danger-light-9: var(--letter-error-bg);
+  --el-color-warning: var(--letter-warning); --el-color-warning-light-9: var(--letter-warning-bg);
+  --el-color-info: var(--letter-muted); --el-color-info-light-9: var(--letter-surface-hover);
+  --el-bg-color: var(--letter-surface-work); --el-bg-color-page: var(--letter-surface-work);
+  --el-bg-color-overlay: var(--letter-surface-paper);
+  --el-text-color-primary: var(--letter-ink); --el-text-color-regular: var(--letter-ink);
+  --el-text-color-secondary: var(--letter-muted); --el-text-color-placeholder: var(--letter-muted);
+  --el-text-color-disabled: var(--letter-muted);
+  --el-disabled-bg-color: var(--letter-surface-hover); --el-disabled-border-color: var(--letter-line);
+  --el-disabled-text-color: var(--letter-muted);
+  --el-checkbox-input-border: 1px solid var(--letter-control-border);
+  --el-border-color: var(--letter-line) !important; --el-border-color-light: var(--letter-line);
+  --el-border-color-lighter: var(--letter-line); --el-border-color-extra-light: var(--letter-line);
+  --el-fill-color: var(--letter-surface-hover); --el-fill-color-light: var(--letter-surface-hover);
+  --el-fill-color-lighter: var(--letter-surface-work); --el-fill-color-blank: var(--letter-surface-paper);
+  --el-fill-color-dark: var(--letter-surface-selected); --el-fill-color-darker: var(--letter-identity-bg);
+  --el-mask-color: var(--letter-scrim); --el-mask-color-extra-light: color-mix(in srgb, var(--letter-surface-work) 80%, transparent);
+  --el-box-shadow-light: 0 10px 36px #00000018; --el-box-shadow: 0 18px 60px #00000024;
+  --extra-light-fill: var(--letter-surface-paper); --settings-page-background: var(--letter-surface-work);
+  --light-ill: var(--letter-surface-hover); --light-border: var(--letter-line);
+  --aside-backgound: var(--letter-surface-nav); --aside-menu-active-background: var(--letter-surface-selected);
+  --loadding-background: color-mix(in srgb, var(--letter-surface-work) 80%, transparent);
+  --dark-border: var(--letter-control-border); --base-fill: var(--letter-surface-hover);
+  --regular-text-color: var(--letter-muted); --secondary-text-color: var(--letter-muted);
+  --light-border-color: var(--letter-line); --base-border-color: var(--letter-control-border);
+  --aside-right-border: none; --header-actions-border: none;
+  --choose-account-background: var(--letter-surface-selected);
+  --email-scroll-content-color: var(--letter-muted); --email-hover-background: var(--letter-surface-hover);
+  --email-right-click-background: var(--letter-surface-selected); --form-desc-color: var(--letter-muted);
+  --login-switch-color: var(--letter-accent); --scrollbar-track-color: var(--letter-control-border);
+  --message-block-color: transparent;
+  --letter-ease: cubic-bezier(.2,.7,.2,1); --letter-exit: cubic-bezier(.4,0,.8,.3);
+  --letter-micro: 160ms; --letter-component: 220ms; --letter-workspace: 280ms;
+}
+body { color: var(--letter-ink); background: var(--letter-surface-work); }
+button { color: inherit; cursor: pointer; }
+button:disabled { cursor: not-allowed; opacity: .6; }
+html[data-theme] :focus-visible { outline: 2px solid var(--letter-accent) !important; outline-offset: 3px !important; }
+html[data-theme] .el-checkbox:has(input:focus-visible) .el-checkbox__inner { outline: 2px solid var(--letter-accent); outline-offset: 3px; }
+html[data-theme] .el-input__wrapper, html[data-theme] .el-select__wrapper, html[data-theme] .el-textarea__inner,
+html[data-theme] .el-input-tag { background: var(--letter-surface-paper); box-shadow: 0 0 0 1px var(--letter-control-border) inset; }
+html[data-theme] .el-button--primary:not(.is-plain) { color: var(--letter-on-accent); }
+html[data-theme] .el-checkbox__input.is-checked .el-checkbox__inner::after { border-color: var(--letter-on-accent); }
+.letter-icon { width: 20px; height: 20px; flex-shrink: 0; vertical-align: middle; }
+.letter-button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 36px; padding: 0 11px; border: 1px solid transparent; border-radius: 5px; color: var(--letter-ink); font-size: 13px; transition: background var(--letter-micro), border-color var(--letter-micro); }
+.letter-button:hover { background: var(--letter-surface-hover); }
+.letter-button.primary { min-height: 40px; padding-inline: 16px; background: var(--letter-accent); color: var(--letter-on-accent); font-weight: 600; }
+.letter-button.primary:hover { background: var(--letter-accent-hover); }
+.letter-button[aria-pressed=true] { color: var(--letter-accent); background: var(--letter-surface-selected); }
+.letter-icon-button { padding: 7px; min-width: 36px; }
+.letter-identity { background: var(--letter-identity-bg); color: var(--letter-selected-ink); border-radius: 7px; display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; font-weight: 600; flex-shrink: 0; }
+.el-dialog { border: 1px solid var(--letter-line); border-radius: 9px !important; padding: 24px !important; background: var(--letter-surface-paper); }
+.el-dialog__title { font-size: 21px !important; font-weight: 600; }
+.el-dialog__body { padding-top: 12px; }
+.el-message-box { background: var(--letter-surface-paper); border-color: var(--letter-line); border-radius: 9px; }
+.el-overlay { background: var(--letter-scrim) !important; }
+.el-dropdown-menu { background: var(--letter-surface-paper); padding: 6px !important; }
+.el-dropdown-menu__item { min-height: 36px; border-radius: 4px; color: var(--letter-ink); }
+.el-popper.is-light { background: var(--letter-surface-paper); border: 1px solid var(--letter-line); }
+.el-dialog .el-input, .el-dialog .el-select { min-height: 40px; }
+.el-dialog input { font-size: 14px; }
+.el-message { max-width: calc(100vw - 24px); white-space: normal !important; }
+.el-message__content { overflow-wrap: anywhere; }
+.el-alert { --el-alert-title-font-size: 14px; }
+.dialog-fade-enter-active { animation: letter-dialog-in 220ms var(--letter-ease) !important; }
+.dialog-fade-leave-active { animation: letter-dialog-out 180ms var(--letter-exit) !important; }
+@keyframes letter-dialog-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes letter-dialog-out { from { opacity: 1; } to { opacity: 0; } }
+.dialog-fade-enter-active .el-dialog { animation: letter-paper-in 220ms var(--letter-ease); }
+.dialog-fade-leave-active .el-dialog { animation: letter-paper-out 180ms var(--letter-exit); }
+@keyframes letter-paper-in { from { transform: translateY(10px) scale(.985); } to { transform: none; } }
+@keyframes letter-paper-out { from { transform: none; } to { transform: translateY(6px) scale(.99); } }
+.letter-compose-enter-active { transition: transform 240ms var(--letter-ease), opacity 240ms var(--letter-ease); }
+.letter-compose-leave-active { transition: transform 180ms var(--letter-exit), opacity 180ms var(--letter-exit); }
+.letter-compose-enter-from, .letter-compose-leave-to { transform: translateY(18px); opacity: 0; }
+/* TinyMCE chrome is part of the writing environment, not sender HTML. */
+html[data-theme] .tox .tox-editor-header, html[data-theme] .tox .tox-toolbar, html[data-theme] .tox .tox-toolbar__primary,
+html[data-theme] .tox .tox-toolbar-overlord, html[data-theme] .tox .tox-toolbar__overflow, html[data-theme] .tox .tox-menubar { background: var(--letter-surface-paper); box-shadow: none; }
+html[data-theme] .tox .tox-tbtn { color: var(--letter-ink); background: var(--letter-surface-paper); }
+html[data-theme] .tox .tox-tbtn svg { fill: var(--letter-ink); }
+html[data-theme] .tox .tox-tbtn:hover, html[data-theme] .tox .tox-tbtn--enabled { background: var(--letter-surface-selected); color: var(--letter-selected-ink); }
+html[data-theme] .tox .tox-tbtn--disabled { color: var(--letter-muted); opacity: .6; }
+html[data-theme] .tox .tox-dialog, html[data-theme] .tox .tox-dialog__header, html[data-theme] .tox .tox-dialog__footer,
+html[data-theme] .tox .tox-collection__group { background: var(--letter-surface-paper); color: var(--letter-ink); border-color: var(--letter-line); }
+html[data-theme] .tox .tox-dialog-wrap__backdrop { background: var(--letter-scrim); }
+@media (max-width: 760px) { .el-dialog { width: calc(100% - 24px) !important; max-width: 560px; padding: 20px !important; } }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; }
+  .letter-button, .letter-nav-link, .aside, .letter-scope button { transition: none !important; }
+  .dialog-fade-enter-active, .dialog-fade-leave-active, .dialog-fade-enter-active .el-dialog,
+  .dialog-fade-leave-active .el-dialog { animation: none !important; }
+  .letter-compose-enter-active, .letter-compose-leave-active { transition: none !important; }
+  .letter-compose-enter-from, .letter-compose-leave-to { transform: none; opacity: 1; }
+}
+
+html[data-theme] .tox .tox-menu, html[data-theme] .tox .tox-collection--list .tox-collection__group,
+html[data-theme] .tox .tox-collection__item, html[data-theme] .tox .tox-selectfield select,
+html[data-theme] .tox .tox-textfield, html[data-theme] .tox .tox-textarea { background:var(--letter-surface-paper); color:var(--letter-ink); border-color:var(--letter-control-border); }
+html[data-theme] .tox .tox-collection__item--active, html[data-theme] .tox .tox-collection__item--enabled { background:var(--letter-surface-selected); color:var(--letter-selected-ink); }
+html[data-theme] .tox .tox-collection__item-icon svg { fill:var(--letter-ink); }
+html[data-theme] .tox .tox-button { background:var(--letter-accent); border-color:var(--letter-accent); color:var(--letter-on-accent); }

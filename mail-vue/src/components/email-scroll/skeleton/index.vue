@@ -136,3 +136,8 @@ import {Icon} from "@iconify/vue";
 }
 
 </style>
+
+<style scoped>
+.email-row:not(.all-email){height:88px;min-height:88px;border-bottom:1px solid var(--letter-line);margin-inline:32px}
+@media(max-width:760px){.email-row:not(.all-email){height:144px;min-height:144px;margin-inline:12px}}
+</style>

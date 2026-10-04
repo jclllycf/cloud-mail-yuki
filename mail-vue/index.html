@@ -9,17 +9,16 @@
   <link rel="icon" href="/public/mail.png" type="image/png">
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
   <script>
-    const uiStoreStr =  localStorage.getItem('ui')
-    let isDark = false
-    if (uiStoreStr) {
-      const uiStore =  JSON.parse(uiStoreStr)
-      isDark = uiStore.dark
-      const root = document.documentElement
-      root.setAttribute('class', isDark ? 'dark' : '');
-    }
-    const metaTag = document.getElementById('theme-color-meta');
-    const isMobile =  !window.matchMedia("(pointer: fine) and (hover: hover)").matches;
-    metaTag.setAttribute('content', isDark ? (isMobile ? '#141414' : '#000000') : (isMobile ? '#191A23' : '#F1F1F1'));
+    // Apply the explicit product preference before loading Vue (never follow system).
+    let appearance = 'clay';
+    try { appearance = localStorage.getItem('cloud-mail-appearance-v1') || 'clay'; } catch {}
+    if (!['clay','sage','cocoa'].includes(appearance)) appearance = 'clay';
+    const surface = {clay:'#F8F6F2',sage:'#F7F7F0',cocoa:'#201B18'}[appearance];
+    document.documentElement.dataset.theme = appearance;
+    document.documentElement.classList.toggle('dark', appearance === 'cocoa');
+    document.documentElement.style.background = surface;
+    document.documentElement.style.setProperty('--el-bg-color', surface);
+    document.getElementById('theme-color-meta').setAttribute('content', surface);
   </script>
 </head>
 <style>
@@ -67,7 +66,7 @@
     height: 4px;
     overflow: hidden;
     border-radius: 999px;
-    background: rgba(64, 158, 255, 0.18);
+    background: var(--letter-surface-selected, #DED0C1);
   }
 
   .loading-progress::before {
@@ -78,7 +77,7 @@
     width: 100%;
     height: 100%;
     border-radius: inherit;
-    background: #409EFF;
+    background: var(--letter-accent, #92543E);
     transform: scaleX(0);
     transform-origin: left center;
     animation: loading-progress-grow 2.4s linear forwards;

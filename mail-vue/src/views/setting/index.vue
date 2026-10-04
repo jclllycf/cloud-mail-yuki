@@ -5,18 +5,18 @@
       <div class="item">
         <div>{{$t('username')}}</div>
         <div>
-          <span v-if="setNameShow" class="edit-name-input">
+          <Transition :css="false" @enter="editMotion.enter" @leave="editMotion.leave" @enter-cancelled="editMotion.cancel"><span v-if="setNameShow" class="edit-name-input">
             <el-input v-model="accountName"  ></el-input>
-            <span class="edit-name" @click="setName">
+            <button class="edit-name letter-button" @click="setName">
              {{$t('save')}}
-            </span>
+            </button>
           </span>
           <span v-else class="user-name">
             <span >{{ userStore.user.name }}</span>
-            <span class="edit-name" @click="showSetName">
+            <button class="edit-name letter-button" @click="showSetName">
              {{$t('change')}}
-            </span>
-          </span>
+            </button>
+          </span></Transition>
         </div>
       </div>
       <div class="item">
@@ -30,6 +30,7 @@
         </div>
       </div>
     </div>
+    <section class="letter-settings-appearance"><AppearancePicker inline /></section>
     <div class="language">
       <div class="title">{{$t('language')}}</div>
       <el-select
@@ -61,6 +62,8 @@
   </div>
 </template>
 <script setup>
+import AppearancePicker from "@/components/appearance-picker.vue"
+import {useLetterMotion} from "@/theme/motion.js"
 import {reactive, ref, defineOptions} from 'vue'
 import {resetPassword, userDelete} from "@/request/my.js";
 import {useUserStore} from "@/store/user.js";
@@ -71,6 +74,10 @@ import {useI18n} from "vue-i18n";
 import {useSettingStore} from "@/store/setting.js";
 
 const { t } = useI18n()
+const editMotion=useLetterMotion({meta:{name:"setting"}}, {
+  duration:el=>el.matches('.edit-name-input') ? 200 : 180,
+  focusTarget:el=>el.querySelector('input,button')
+})
 const accountStore = useAccountStore()
 const settingStore = useSettingStore()
 const userStore = useUserStore();
@@ -296,3 +303,5 @@ function submitPwd() {
   }
 }
 </style>
+
+<style scoped>.letter-settings-appearance{padding:24px 30px;border-bottom:1px solid var(--letter-line);max-width:960px}</style>

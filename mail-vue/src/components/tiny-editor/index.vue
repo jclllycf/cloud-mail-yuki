@@ -38,6 +38,20 @@ const editorRef = ref(null);
 const showLoading = ref(false);
 const uiStore = useUiStore();
 const settingStore = useSettingStore();
+let pendingContent = null;
+let pendingBookmark = null;
+
+function updateEditorTheme() {
+  if (!editor.value?.getDoc()) return;
+  const styles = getComputedStyle(document.documentElement);
+  const doc = editor.value.getDoc();
+  let style = doc.getElementById('warm-letter-editor-theme');
+  if (!style) { style = doc.createElement('style'); style.id = 'warm-letter-editor-theme'; doc.head.appendChild(style); }
+  style.textContent = `html,body { background:${styles.getPropertyValue('--letter-surface-paper')}; color:${styles.getPropertyValue('--letter-ink')}; }
+    body { font-family:inherit; line-height:1.8; padding:16px 4px; }
+    a { color:${styles.getPropertyValue('--letter-information')}; }
+    :root { --scrollbar-track-color:${styles.getPropertyValue('--letter-surface-paper')}; --scrollbar-thumb-color:${styles.getPropertyValue('--letter-control-border')}; }`;
+}
 
 onMounted(() => {
   initTinyMCE();
@@ -48,12 +62,18 @@ onBeforeUnmount(() => {
 });
 
 watch(() => props.defValue, (newValue) => {
+  if (pendingContent !== null) pendingContent = newValue;
   if (editor.value && editor.value.getContent() !== newValue) {
     editor.value.setContent(newValue);
   }
 });
 
-watch(() => [uiStore.dark, settingStore.lang], () => {
+// Theme changes only recolor the editor environment: selection, undo, uploads and
+// unsent content stay in the existing TinyMCE instance.
+watch(() => uiStore.theme, updateEditorTheme);
+watch(() => settingStore.lang, () => {
+  pendingContent = editor.value?.getContent() ?? props.defValue;
+  pendingBookmark = editor.value?.selection.getBookmark(2, true) ?? null;
   destroyEditor();
   initEditor();
 });
@@ -113,7 +133,11 @@ function initEditor() {
     setup: (ed) => {
       editor.value = ed;
       ed.on('init', () => {
-        ed.setContent(props.defValue);
+        ed.setContent(pendingContent ?? props.defValue);
+        if (pendingBookmark) ed.selection.moveToBookmark(pendingBookmark);
+        pendingContent = null;
+        pendingBookmark = null;
+        updateEditorTheme();
         isInitialized.value = true;
       });
       ed.on('input change', () => {
@@ -159,12 +183,12 @@ function initEditor() {
 
 function focus() {
   nextTick(() => {
-    editor.value.focus()
+    editor.value?.focus()
   })
 }
 
 function getContent() {
-  return editor.value.getContent()
+  return editor.value?.getContent() ?? pendingContent ?? props.defValue
 }
 
 

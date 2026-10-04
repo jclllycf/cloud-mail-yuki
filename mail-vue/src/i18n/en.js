@@ -1,4 +1,5 @@
 const en = {
+    letter: {"appearance": "Appearance", "compose": "Write a letter", "navigation": "Navigation", "workspace": "Workspace", "mail": "Mail", "accountSwitch": "Switch & manage addresses", "desk": "A quiet place for your letters.", "notices": "Notices", "noSubject": "No subject", "selectAll": "Select all messages", "more": "More actions", "quiet": "A quiet moment here today.", "current": "Current address", "allReceive": "Receive all addresses", "singleReceive": "Receive this address only", "fromIdentity": "Sending as", "refresh": "Refresh", "back": "Back", "close": "Close", "download": "Download", "sort": "Sort by time", "retry": "Try again", "loadError": "Your letters could not load. Please try again."},
     inbox: 'Inbox',
     drafts: 'Drafts',
     sent: 'Sent',

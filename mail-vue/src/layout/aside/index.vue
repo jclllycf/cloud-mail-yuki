@@ -1,179 +1,61 @@
 <template>
-  <el-scrollbar class="scroll">
-    <div>
-      <div class="title" >
-        <Icon icon="mdi:email-outline" width="24" height="24" />
-        <div>{{settingStore.settings.title}}</div>
-      </div>
-      <el-menu :collapse="false" text-color="#fff" active-text-color="#fff" style="margin-top: 10px">
-        <el-menu-item @click="router.push({name: 'email'})" index="email"
-                      :class="route.meta.name === 'email' ? 'choose-item' : ''">
-          <Icon icon="hugeicons:mailbox-01" width="20" height="20" />
-          <span class="menu-name" style="margin-left: 16px">{{$t('inbox')}}</span>
-        </el-menu-item>
-        <el-menu-item @click="router.push({name: 'send'})" index="send" v-perm="'email:send'"
-                      :class="route.meta.name === 'send' ? 'choose-item' : ''">
-          <Icon icon="cil:send" width="20" height="20" />
-          <span class="menu-name" style="margin-left: 16px">{{$t('sent')}}</span>
-        </el-menu-item>
-        <el-menu-item @click="router.push({name: 'draft'})" index="draft" v-perm="'email:send'"
-                      :class="route.meta.name === 'draft' ? 'choose-item' : ''">
-          <Icon icon="ep:document" width="19" height="19" />
-          <span class="menu-name" style="margin-left: 17px">{{$t('drafts')}}</span>
-        </el-menu-item>
-        <el-menu-item @click="router.push({name: 'star'})" index="star"
-                      :class="route.meta.name === 'star' ? 'choose-item' : ''">
-          <Icon icon="solar:star-line-duotone" width="20" height="20" />
-          <span class="menu-name" style="margin-left: 16px">{{$t('starred')}}</span>
-        </el-menu-item>
-        <el-menu-item @click="router.push({name: 'setting'})" index="setting"
-                      :class="route.meta.name === 'setting' ? 'choose-item' : ''">
-          <Icon icon="fluent:settings-48-regular" width="20" height="20" />
-          <span class="menu-name" style="margin-left: 16px">{{$t('settings')}}</span>
-        </el-menu-item>
-        <div class="manage-title" v-perm="['all-email:query','user:query','role:query','setting:query','analysis:query','reg-key:query']">
-          <div>{{$t('manage')}}</div>
-        </div>
-        <el-menu-item @click="router.push({name: 'analysis'})" index="analysis" v-perm="'analysis:query'"
-                      :class="route.meta.name === 'analysis' ? 'choose-item' : ''">
-          <Icon icon="fluent:data-pie-20-regular" width="24" height="24" />
-          <span class="menu-name" style="margin-left: 13px">{{$t('analytics')}}</span>
-        </el-menu-item>
-        <el-menu-item @click="router.push({name: 'user'})" index="setting" v-perm="'user:query'"
-                      :class="route.meta.name === 'user' ? 'choose-item' : ''">
-          <Icon icon="si:user-alt-2-line" width="20" height="20" />
-          <span class="menu-name" style="margin-left: 16px">{{$t('allUsers')}}</span>
-        </el-menu-item>
-        <el-menu-item @click="router.push({name: 'all-email'})" index="all-email" v-perm="'all-email:query'"
-                      :class="route.meta.name === 'all-email' ? 'choose-item' : ''">
-          <Icon icon="fluent:mail-list-28-regular" width="22" height="22" />
-          <span class="menu-name" style="margin-left: 15px">{{$t('allMail')}}</span>
-        </el-menu-item>
-        <el-menu-item @click="router.push({name: 'role'})" index="setting" v-perm="'role:query'"
-                      :class="route.meta.name === 'role' ? 'choose-item' : ''">
-          <Icon icon="fluent:lock-closed-16-regular" width="22" height="22" />
-          <span class="menu-name" style="margin-left: 15px">{{$t('permissions')}}</span>
-        </el-menu-item>
-        <el-menu-item @click="router.push({name: 'reg-key'})" index="reg-key" v-perm="'reg-key:query'"
-                      :class="route.meta.name === 'reg-key' ? 'choose-item' : ''">
-          <Icon icon="fluent:fingerprint-20-filled" width="22" height="22" />
-          <span class="menu-name" style="margin-left: 15px">{{$t('inviteCode')}}</span>
-        </el-menu-item>
-        <el-menu-item @click="router.push({name: 'sys-setting'})" index="sys-setting" v-perm="'setting:query'"
-                      :class="route.meta.name === 'sys-setting' ? 'choose-item' : ''">
-          <Icon icon="eos-icons:system-ok-outlined" width="18" height="18" style="margin-left: 2px" />
-          <span class="menu-name" style="margin-left: 17px">{{$t('SystemSettings')}}</span>
-        </el-menu-item>
-      </el-menu>
+  <aside class="letter-navigation" :aria-label="$t('letter.navigation')">
+    <div class="letter-brand"><span class="brand-mark"><LetterIcon name="mail" /></span><div><strong>{{ settingStore.settings.title }}</strong><small>Warm Letter</small></div><button class="letter-button letter-icon-button sidebar-close" :aria-label="$t('letter.close')" @click="ui.asideShow=false"><LetterIcon name="close" /></button></div>
+    <button class="letter-account-entry" @click="openAccount" :disabled="!canSwitch" :aria-label="$t('letter.accountSwitch')">
+      <span class="letter-identity">{{ (account.currentAccount.name || account.currentAccount.email || user.user.email || 'Y')[0]?.toUpperCase() }}</span>
+      <span class="account-label"><strong>{{ account.currentAccount.name || user.user.name }}</strong><small>{{ account.currentAccount.email || user.user.email }}</small></span><LetterIcon name="chevron" v-if="canSwitch" />
+    </button>
+    <div class="letter-scope" role="group" :aria-label="$t('letter.workspace')">
+      <button :aria-pressed="!admin" @click="router.push({name:'email'})"><LetterIcon name="mail" />{{ $t('letter.mail') }}</button>
+      <button v-perm="adminPerms" :aria-pressed="admin" @click="openAdmin"><LetterIcon name="chart" />{{ $t('manage') }}</button>
     </div>
-  </el-scrollbar>
+    <nav class="letter-nav-list">
+      <template v-if="!admin">
+        <router-link v-for="item in mailLinks.filter(item=>!item.perm || hasPerm(item.perm))" :key="item.name" :to="{name:item.name}" class="letter-nav-link" :class="{current: route.meta.name === item.name || item.name === 'email' && route.meta.name === 'content'}" :aria-current="route.meta.name === item.name ? 'page' : undefined" >
+          <LetterIcon :name="item.icon" /><span>{{ $t(item.label) }}</span>
+        </router-link>
+      </template>
+      <template v-else>
+        <router-link v-for="item in adminLinks" :key="item.name" :to="{name:item.name}" class="letter-nav-link" :class="{current:route.meta.name === item.name}" :aria-current="route.meta.name === item.name ? 'page' : undefined" v-perm="item.perm"><LetterIcon :name="item.icon" /><span>{{ $t(item.label) }}</span></router-link>
+      </template>
+    </nav>
+    <div class="letter-nav-footer"><router-link :to="{name:'setting'}" class="letter-nav-link" :class="{current:route.meta.name === 'setting'}"><LetterIcon name="settings" /><span>{{ $t('settings') }}</span></router-link><p>{{ $t('letter.desk') }}</p></div>
+  </aside>
 </template>
-
 <script setup>
-import router from "@/router/index.js";
-import { useRoute } from "vue-router";
-import {Icon} from "@iconify/vue";
-import {useSettingStore} from "@/store/setting.js";
-
-const settingStore = useSettingStore();
-const route = useRoute();
-
+import router from '@/router/index.js'
+import {useRoute} from 'vue-router'
+import {computed} from 'vue'
+import {useSettingStore} from '@/store/setting.js'
+import {useUiStore} from '@/store/ui.js'
+import {useAccountStore} from '@/store/account.js'
+import {useUserStore} from '@/store/user.js'
+import {hasPerm} from '@/perm/perm.js'
+import LetterIcon from '@/components/letter-icon.vue'
+const settingStore=useSettingStore(), ui=useUiStore(), account=useAccountStore(), user=useUserStore(), route=useRoute()
+const adminPerms=['all-email:query','user:query','role:query','setting:query','analysis:query','reg-key:query']
+const adminLinks=[{name:'analysis',label:'analytics',icon:'chart',perm:'analysis:query'},{name:'user',label:'allUsers',icon:'users',perm:'user:query'},{name:'all-email',label:'allMail',icon:'inbox',perm:'all-email:query'},{name:'role',label:'permissions',icon:'lock',perm:'role:query'},{name:'reg-key',label:'inviteCode',icon:'ticket',perm:'reg-key:query'},{name:'sys-setting',label:'SystemSettings',icon:'settings',perm:'setting:query'}]
+const mailLinks=[{name:'email',label:'inbox',icon:'inbox',perm:null},{name:'send',label:'sent',icon:'send',perm:'email:send'},{name:'draft',label:'drafts',icon:'draft',perm:'email:send'},{name:'star',label:'starred',icon:'star',perm:null}]
+const admin=computed(()=>adminLinks.some(item=>item.name===route.meta.name))
+const canSwitch=computed(()=>hasPerm('account:query') && settingStore.settings.manyEmail===0)
+function openAccount(){if(canSwitch.value){ui.asideShow=window.innerWidth>1024;ui.accountShow=true}}
+function openAdmin(){const first=adminLinks.find(item=>hasPerm(item.perm));if(first)router.push({name:first.name})}
 </script>
-
-<style lang="scss" scoped>
-
-.title {
-  margin: 15px 10px;
-  height: 45px;
-  border-radius: 6px;
-  display: flex;
-  position: relative;
-  font-size: 16px;
-  font-weight: bold;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-  color: #ffffff;
-  background: linear-gradient(135deg, #1890ff, #3a80dd);
-  transition: all 0.3s ease;
-  max-width: 240px;
-  padding: 0 10px;
-  > div {
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    max-width: calc(240px - 20px - 30px);
-  }
-
-  :deep(.el-icon) {
-    flex-shrink: 0;
-    font-size: 20px;
-  }
-
-  .user-right-icon {
-    align-self: center;
-    position: absolute;
-    font-size: 12px;
-    right: 8px;
-    color: #ffffff;
-  }
-
-}
-
-
-.manage-title {
-  margin-top: 10px;
-  padding-left: 20px;
-  color: #fff;
-}
-
-.el-menu-item {
-  margin: 3px 10px !important;
-  border-radius: 6px;
-  height: 36px;
-  padding: 10px !important;
-}
-
-.choose-item {
-  font-weight: 400;
-  background: var(--aside-menu-active-background) !important;
-  backdrop-filter: blur(4px);
-}
-
-@media (hover: hover) {
-  .el-menu-item:hover {
-    background: rgba(255, 255, 255, 0.08) !important;
-  }
-}
-
-.menu-name {
-  user-select: none;
-}
-
-
-:deep(.el-scrollbar__wrap--hidden-default ) {
-  background: var(--aside-backgound) !important;
-}
-
-:deep(.el-menu-item) {
-  background: var(--aside-backgound);
-}
-
-:deep(.el-menu) {
-  background: var(--aside-backgound);
-}
-
-.el-menu {
-  border-right: 0;
-  width: 260px;
-}
-
-:deep(.el-divider__text) {
-  background: var(--aside-backgound);
-  color: #FFFFFF;
-}
-
-.scroll {
-
-}
+<style scoped>
+.letter-navigation { height:100%; display:flex; flex-direction:column; padding:28px 18px 18px; background:var(--letter-surface-nav); border-right:1px solid var(--letter-line); overflow:auto; }
+.letter-brand { display:flex; align-items:center; gap:10px; margin:0 4px 30px; }
+.brand-mark { width:35px; height:35px; display:grid; place-items:center; color:var(--letter-accent); border:1px solid var(--letter-control-border); border-radius:8px; }
+.letter-brand strong { font-size:18px; letter-spacing:-.3px; }
+.letter-brand small { display:block; font-size:11px; color:var(--letter-muted); letter-spacing:1px; }
+.letter-account-entry { display:flex; align-items:center; gap:10px; width:100%; text-align:left; padding:12px 6px; margin-bottom:24px; border-block:1px solid var(--letter-line); }
+.letter-account-entry:disabled { cursor:default; opacity:1; }
+.account-label { flex:1; min-width:0; }.account-label strong { font-size:13px; display:block; }.account-label small { display:block; font-size:11px; color:var(--letter-muted); overflow-wrap:anywhere; margin-top:3px; }
+.letter-scope { display:flex; gap:4px; margin-bottom:20px; background:var(--letter-surface-work); border:1px solid var(--letter-line); padding:4px; border-radius:6px; }
+.letter-scope button { flex:1; display:flex; align-items:center; justify-content:center; gap:6px; min-height:32px; font-size:12px; border-radius:3px; transition:background 160ms; }
+.letter-scope button[aria-pressed=true] { background:var(--letter-surface-selected); color:var(--letter-selected-ink); font-weight:600; }.letter-scope .letter-icon { width:16px; height:16px; }
+.letter-nav-list { display:flex; flex-direction:column; gap:6px; }
+.letter-nav-link { display:flex; align-items:center; gap:12px; text-decoration:none; color:var(--letter-ink); padding:11px 12px; min-height:44px; position:relative; border-radius:5px; transition:background 160ms, color 160ms; font-size:14px; }
+.letter-nav-link:hover { background:var(--letter-surface-hover); }.letter-nav-link.current { background:var(--letter-surface-selected); color:var(--letter-selected-ink); font-weight:600; }.letter-nav-link.current::before { content:''; position:absolute; left:0; top:10px; bottom:10px; width:3px; background:var(--letter-accent); border-radius:2px; }.letter-nav-link.current .letter-icon { stroke-width:2; fill:color-mix(in srgb,var(--letter-accent) 12%,transparent); }
+.letter-nav-footer { margin-top:auto; padding-top:32px; }.letter-nav-footer p { padding:18px 12px 0; font-size:11px; color:var(--letter-muted); }.sidebar-close { display:none; margin-left:auto; }
+@media(max-width:1024px){.sidebar-close{display:flex}.letter-navigation{padding-top:22px}}
 </style>

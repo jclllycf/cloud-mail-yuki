@@ -1,79 +1,44 @@
 <template>
-  <div class="box" v-loading="loading">
+  <article class="box letter-reader" v-loading="loading">
     <div class="header-actions">
-      <Icon class="icon" icon="material-symbols-light:arrow-back-ios-new" width="20" height="20" @click="handleBack"/>
-      <Icon v-perm="'email:delete'" class="icon" icon="uiw:delete" width="16" height="16" @click="handleDelete"/>
-      <span class="star" v-if="emailStore.contentData.showStar">
-        <Icon class="icon" @click="changeStar" v-if="email.isStar" icon="fluent-color:star-16" width="20" height="20"/>
-        <Icon class="icon" @click="changeStar" v-else icon="solar:star-line-duotone" width="18" height="18"/>
-      </span>
-      <Icon class="icon" v-if="emailStore.contentData.showReply" v-perm="'email:send'"  @click="openReply" icon="la:reply" width="21" height="21" />
-      <Icon class="icon" v-if="emailStore.contentData.showReply" v-perm="'email:send'"  @click="openForward" icon="iconoir:arrow-up-right" width="20" height="20" />
+      <button class="letter-button reader-back" @click="handleBack"><LetterIcon name="back" /><span>{{ $t('letter.back') }}</span></button>
+      <div class="reader-actions">
+        <button class="letter-button" v-if="emailStore.contentData.showReply" v-perm="'email:send'" @click="openReply"><LetterIcon name="reply"/><span>{{ $t('reply') }}</span></button>
+        <button class="letter-button" v-if="emailStore.contentData.showReply" v-perm="'email:send'" @click="openForward"><LetterIcon name="forward"/><span>{{ $t('forward') }}</span></button>
+        <button class="letter-button letter-icon-button" v-if="emailStore.contentData.showStar" @click="changeStar" :aria-label="$t('star')" :aria-pressed="!!email.isStar"><LetterIcon name="star" /></button>
+        <button class="letter-button letter-icon-button" v-perm="'email:delete'" @click="handleDelete" :aria-label="$t('delete')"><LetterIcon name="delete" /></button>
+      </div>
     </div>
-    <div></div>
     <el-scrollbar class="scrollbar">
       <div class="container">
-        <div class="email-title">
-          {{ email.subject }}
-        </div>
+        <h1 class="email-title">{{ email.subject || $t('letter.noSubject') }}</h1>
         <div class="content">
           <div class="email-info">
-            <div>
-              <div class="send"><span class="send-source">{{$t('from')}}</span>
-                <div class="send-name">
-                  <span class="send-name-title">{{ email.name }}</span>
-                  <span><{{ email.sendEmail }}></span>
-                </div>
-              </div>
-              <div class="receive"><span class="source">{{$t('recipient')}}</span><span class="receive-email">{{  formateReceive(email.recipient) }}</span></div>
-              <div class="date">
-                <div>{{ formatDetailDate(email.createTime) }}</div>
-              </div>
-            </div>
+            <div class="sender-metadata"><span class="letter-identity">{{ (email.name || email.sendEmail || '?')[0]?.toUpperCase() }}</span><div class="sender-name"><strong>{{ email.name }}</strong><span>{{ email.sendEmail }}</span></div><time class="date">{{ formatDetailDate(email.createTime) }}</time></div>
+            <details class="recipient-metadata"><summary>{{ $t('recipient') }} · {{ formateReceive(email.recipient) }}</summary><p>{{ $t('from') }}: {{ email.name }} &lt;{{ email.sendEmail }}&gt;</p><p>{{ $t('recipient') }}: {{ formateReceive(email.recipient) }}</p><p>{{ formatDetailDate(email.createTime) }}</p></details>
             <el-alert v-if="email.status === 3" :closable="false" :title="toMessage(email.message)" class="email-msg" type="error" show-icon />
             <el-alert v-if="email.status === 4" :closable="false" :title="$t('complained')" class="email-msg" type="warning" show-icon />
             <el-alert v-if="email.status === 5" :closable="false" :title="$t('delayed')" class="email-msg" type="warning" show-icon />
           </div>
           <el-scrollbar class="htm-scrollbar" :class="!email.attList?.length ? 'bottom-distance' : ''">
             <ShadowHtml class="shadow-html" :html="formatImage(email.content)" v-if="email.content" />
-            <pre v-else class="email-text" >{{email.text}}</pre>
+            <pre v-else class="email-text">{{ email.text }}</pre>
           </el-scrollbar>
-          <div class="att" v-if="email.attList?.length > 0">
-            <div class="att-title">
-              <span>{{$t('attachments')}}</span>
-              <span>{{$t('attCount',{total: email.attList.length})}}</span>
-            </div>
-            <div class="att-box">
-
-              <div class="att-item" v-for="att in email.attList" :key="att.attId">
-                <div class="att-icon" @click="showImage(att.key)">
-                  <Icon v-bind="getIconByName(att.filename)" />
-                </div>
-                <div class="att-name" @click="showImage(att.key)">
-                  {{ att.filename }}
-                </div>
-                <div class="att-size">{{ formatBytes(att.size) }}</div>
-                <div class="opt-icon att-icon">
-                  <Icon v-if="isImage(att.filename)" icon="hugeicons:view" width="22" height="22" @click="showImage(att.key)"/>
-                  <a :href="cvtR2Url(att.key)" download>
-                    <Icon icon="system-uicons:push-down" width="22" height="22"/>
-                  </a>
-                </div>
-              </div>
-            </div>
-          </div>
+          <section class="att" v-if="email.attList?.length > 0">
+            <div class="att-title"><strong>{{ $t('attachments') }}</strong><span>{{ $t('attCount',{total: email.attList.length}) }}</span></div>
+            <div class="att-box"><div class="att-item" v-for="att in email.attList" :key="att.attId">
+              <span class="att-icon"><Icon v-bind="getIconByName(att.filename)" /></span><span class="att-name">{{ att.filename }}</span><span class="att-size">{{ formatBytes(att.size) }}</span>
+              <div class="opt-icon"><button class="letter-button letter-icon-button" v-if="isImage(att.filename)" @click="showImage(att.key)" :aria-label="$t('preview')+' '+att.filename"><LetterIcon name="eye" /></button><a class="letter-button letter-icon-button" :href="cvtR2Url(att.key)" download :aria-label="$t('letter.download')+' '+att.filename"><LetterIcon name="download" /></a></div>
+            </div></div>
+          </section>
         </div>
       </div>
     </el-scrollbar>
-    <el-image-viewer
-        v-if="showPreview"
-        :url-list="srcList"
-        show-progress
-        @close="showPreview = false"
-    />
-  </div>
+    <el-image-viewer v-if="showPreview" :url-list="srcList" show-progress @close="showPreview=false" />
+  </article>
 </template>
 <script setup>
+import LetterIcon from "@/components/letter-icon.vue"
 import ShadowHtml from '@/components/shadow-html/index.vue'
 import {computed, reactive, ref, watch, onMounted, onUnmounted} from "vue";
 import {useRouter, useRoute} from 'vue-router'
@@ -318,215 +283,16 @@ const handleDelete = () => {
   })
 }
 </script>
-<style scoped lang="scss">
-.box {
-  height: 100%;
-  overflow: hidden;
-}
-
-.header-actions {
-  padding: 9px 15px 8px;
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  box-shadow: var(--header-actions-border);
-  font-size: 18px;
-  .star {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 21px;
-  }
-  .icon {
-    cursor: pointer;
-  }
-}
-
-
-.scrollbar {
-  height: calc(100% - 38px);
-  width: 100%;
-}
-
-.container {
-  font-size: 14px;
-  padding-left: 20px;
-  padding-right: 20px;
-  padding-top: 10px;
-  @media (max-width: 1023px) {
-    padding-left: 15px;
-    padding-right: 15px;
-  }
-
-  .email-title {
-    font-size: 20px;
-    font-weight: bold;
-    margin-bottom: 10px;
-  }
-
-  .htm-scrollbar {
-  }
-
-  .content {
-    display: flex;
-    flex-direction: column;
-
-    .att {
-      margin-top: 30px;
-      margin-bottom: 30px;
-      border: 1px solid var(--light-border-color);
-      padding: 14px;
-      border-radius: 6px;
-      width: fit-content;
-      .att-box {
-        min-width: min(410px,calc(100vw - 60px));
-        max-width: 600px;
-        display: grid;
-        gap: 12px;
-        grid-template-rows: 1fr;
-      }
-
-      .att-title {
-        margin-bottom: 8px;
-        display: flex;
-        justify-content: space-between;
-        span:first-child {
-          font-weight: bold;
-        }
-      }
-
-      .att-item {
-        cursor: pointer;
-        div {
-          align-self: center;
-        }
-        background: var(--light-ill);
-        padding: 5px 7px;
-        border-radius: 4px;
-        align-self: start;
-        display: grid;
-        grid-template-columns: auto 1fr auto auto;
-        .att-icon {
-          display: grid;
-        }
-
-        .att-size {
-          color: var(--secondary-text-color);
-        }
-
-        .att-name {
-          margin-left: 8px;
-          margin-right: 8px;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          word-break: break-all;
-        }
-
-        .att-image {
-          width: 60px;
-          height: 60px;
-          object-fit: contain;
-        }
-
-        .opt-icon {
-          padding-left: 10px;
-          color: var(--secondary-text-color);
-          align-items: center;
-          display: flex;
-          gap: 8px;
-          cursor: pointer;
-          a {
-            color: var(--secondary-text-color);
-            align-items: center;
-            display: flex;
-          }
-        }
-      }
-    }
-
-    .email-info {
-
-      border-bottom: 1px solid var(--light-border-color);
-      margin-bottom: 20px;
-      padding-bottom: 8px;
-      @media (max-width: 1024px) {
-        margin-bottom: 15px;
-      }
-      .date {
-        color: var(--regular-text-color);
-        margin-bottom: 6px;
-      }
-
-      .email-msg {
-        max-width: 400px;
-        width: fit-content;
-        margin-bottom: 15px;
-      }
-
-      .send {
-        display: flex;
-        margin-bottom: 6px;
-
-        .send-name {
-          color: var(--regular-text-color);
-          display: flex;
-          flex-wrap: wrap;
-        }
-
-        .send-name-title {
-          padding-right: 5px;
-        }
-      }
-
-      .receive {
-        margin-bottom: 6px;
-        display: flex;
-        .receive-email {
-          max-width: 700px;
-          word-break: break-word;
-        }
-        span:nth-child(2) {
-          color: var(--regular-text-color);
-        }
-      }
-
-      .send-source {
-        white-space: nowrap;
-        font-weight: bold;
-        padding-right: 10px;
-      }
-
-      .source {
-        white-space: nowrap;
-        font-weight: bold;
-        padding-right: 10px;
-      }
-    }
-  }
-}
-
-.shadow-html::after  {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: var(--message-block-color); /* 半透明黑色蒙层 */
-  pointer-events: none; /* 不影响点击 */
-}
-
-.email-text {
-  font-family: inherit;
-  white-space: pre-wrap;
-  word-break: break-word;
-  margin: 0;
-}
-
-.bottom-distance {
-  margin-bottom: 30px;
-}
-
-
+<style scoped>
+.box{height:100%;overflow:hidden;display:grid;grid-template-rows:56px minmax(0,1fr);background:var(--letter-surface-work)}
+.header-actions{padding:0 270px 0 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid var(--letter-line);font-size:13px}
+.reader-actions{display:flex;align-items:center;gap:4px}.reader-actions [aria-pressed=true] .letter-icon{fill:var(--letter-accent)}
+.scrollbar{height:100%;width:100%}.container{font-size:14px;background:var(--letter-surface-paper);border-inline:1px solid var(--letter-line);max-width:900px;min-height:100%;margin:auto;padding:48px 54px 64px}
+.email-title{font-size:30px;font-weight:600;letter-spacing:-.6px;line-height:1.4;overflow-wrap:anywhere;max-width:780px;margin-bottom:26px}
+.email-info{border-bottom:1px solid var(--letter-line);padding-bottom:24px;margin-bottom:32px}.sender-metadata{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.sender-name{display:flex;flex-direction:column;gap:3px;flex:1;min-width:0}.sender-name strong{font-size:14px}.sender-name span{font-size:12px;color:var(--letter-muted);overflow-wrap:anywhere}.date{font-size:11px;color:var(--letter-muted)}
+.recipient-metadata{font-size:12px;color:var(--letter-muted);margin:14px 0 0 46px;overflow-wrap:anywhere}.recipient-metadata summary{cursor:pointer}.recipient-metadata p{margin:8px 0}.email-msg{margin-top:16px}
+.email-text{font-family:inherit;white-space:pre-wrap;word-break:break-word;font-size:16px;line-height:1.85;max-width:720px;color:var(--letter-ink);margin:0}.shadow-html{background:white;/* Sender HTML keeps its original context in every theme. */}.htm-scrollbar{max-width:100%}.bottom-distance{margin-bottom:20px}
+.att{margin-top:40px;padding-top:24px;border-top:1px solid var(--letter-line)}.att-title{display:flex;justify-content:space-between;font-size:13px;margin-bottom:12px}.att-title>span{color:var(--letter-muted);font-size:12px}.att-box{display:flex;flex-direction:column}.att-item{padding:10px 0;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--letter-line)}.att-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}.att-size{font-size:11px;color:var(--letter-muted)}.opt-icon{display:flex;align-items:center;gap:2px}.opt-icon a{text-decoration:none}
+@media(max-width:1100px){.container{padding:36px 32px}.header-actions{padding-left:16px;gap:4px}}
+@media(max-width:760px){.header-actions{height:96px;flex-wrap:wrap;padding:0 120px 0 12px;position:relative;align-content:start}.reader-back{height:54px}.reader-actions{height:40px;position:absolute;left:12px;right:12px;bottom:1px;gap:6px}.reader-actions .letter-button{font-size:12px}.reader-actions .letter-icon-button:nth-last-child(2){margin-left:auto}.box{grid-template-rows:96px minmax(0,1fr)}.container{padding:30px 22px 44px;border:0}.email-title{font-size:25px;letter-spacing:-.4px;margin-bottom:24px;line-height:1.4}.date{display:block;width:100%;margin-left:46px;font-size:11px}.email-info{padding-bottom:22px;margin-bottom:28px}.email-text{font-size:15px;line-height:1.85}.recipient-metadata{margin-top:10px;font-size:11px}.att-item{gap:6px;flex-wrap:wrap}.att-name{font-size:12px}.att-size{font-size:10px}.opt-icon .letter-button{padding:6px;min-width:30px}.opt-icon .letter-icon{width:18px}}
 </style>
