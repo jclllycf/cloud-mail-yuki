@@ -449,9 +449,11 @@
                 <p>A warm, lightweight, and personal little place for email.</p>
                 <p>Designed to make everyday mail feel a little quieter, simpler, and more personal.</p>
                 <p>Designed &amp; maintained by <strong>YUKI</strong></p>
+                <p><strong>Version:</strong> {{ currentVersion }}</p>
                 <div class="yuki-about-links">
                   <a href="https://mail.jcllyuki.com" target="_blank" rel="noreferrer">Website: mail.jcllyuki.com</a>
                   <a href="mailto:jclllycf@gmail.com">Contact: jclllycf@gmail.com</a>
+                  <a href="https://github.com/jclllycf/cloud-mail-yuki/issues" target="_blank" rel="noreferrer">Support / Feedback: GitHub Issues</a>
                 </div>
               </section>
               <details class="yuki-credits">
@@ -459,7 +461,7 @@
                 <p>Yuki Mail is based on Cloud Mail by maillab and is distributed under the MIT License. Copyright notices and license terms are preserved in the repository LICENSE file.</p>
                 <a href="https://github.com/maillab/cloud-mail" target="_blank" rel="noreferrer">Cloud Mail source and acknowledgements</a>
                 <p>Upstream use note: 本项目仅供学习交流，禁止用于违法业务。请遵守当地法规，作者不承担任何法律责任。</p>
-                <small>{{ $t('version') }}: {{ currentVersion }}<span v-if="hasUpdate"> · Update available</span></small>
+                <small>Upstream version: {{ currentVersion }}<span v-if="hasUpdate"> · Update available</span></small>
               </details>
             </div>
           </div>
