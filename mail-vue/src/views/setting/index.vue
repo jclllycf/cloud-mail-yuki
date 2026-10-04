@@ -6,7 +6,7 @@
         <div>{{$t('username')}}</div>
         <div>
           <Transition :css="false" @enter="editMotion.enter" @leave="editMotion.leave" @enter-cancelled="editMotion.cancel"><span v-if="setNameShow" class="edit-name-input">
-            <el-input v-model="accountName"  ></el-input>
+            <el-input v-model="accountName" :aria-label="$t('username')"></el-input>
             <button class="edit-name letter-button" @click="setName">
              {{$t('save')}}
             </button>
@@ -36,6 +36,7 @@
       <el-select
           :model-value="langSelect"
           class="language-select"
+          :aria-label="$t('language')"
           placeholder="Select"
           @change="changeLang"
       >
@@ -53,10 +54,10 @@
       </div>
     </div>
     <el-dialog v-model="pwdShow" :title="$t('changePassword')" width="340">
-      <div class="update-pwd">
-        <el-input type="password" :placeholder="$t('newPassword')" v-model="form.password" autocomplete="off" @keyup.enter="submitPwd"/>
-        <el-input type="password" :placeholder="$t('confirmPassword')" v-model="form.newPwd" autocomplete="off" @keyup.enter="submitPwd"/>
-        <el-button type="primary" :loading="setPwdLoading" @click="submitPwd">{{$t('save')}}</el-button>
+      <div class="letter-dialog-form">
+        <el-input type="password" :aria-label="$t('newPassword')" :placeholder="$t('newPassword')" v-model="form.password" autocomplete="off" @keyup.enter="submitPwd"/>
+        <el-input type="password" :aria-label="$t('confirmPassword')" :placeholder="$t('confirmPassword')" v-model="form.newPwd" autocomplete="off" @keyup.enter="submitPwd"/>
+        <el-button class="letter-dialog-action" type="primary" :loading="setPwdLoading" @click="submitPwd">{{$t('save')}}</el-button>
       </div>
     </el-dialog>
   </div>
@@ -220,12 +221,6 @@ function submitPwd() {
 
   @media (max-width: 767px) {
     padding: 30px 30px;
-  }
-
-  .update-pwd {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
   }
 
   .title {

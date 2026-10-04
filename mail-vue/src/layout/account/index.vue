@@ -75,17 +75,18 @@
       </div>
 
     </el-scrollbar>
-    <el-dialog append-to-body v-model="showAdd" :title="$t('addAccount')">
-      <div class="container">
-        <label class="address-label">{{ $t('emailAccount') }}</label>
-        <el-input v-model="addForm.email" ref="addRef" type="text" :aria-label="$t('emailAccount')" :placeholder="$t('emailAccount')" autocomplete="off" @keyup.enter="submit">
+    <el-dialog append-to-body v-model="showAdd" :title="$t('addAccount')" width="400">
+      <div class="letter-dialog-form">
+        <div class="letter-dialog-field">
+        <label class="letter-dialog-label" for="letter-address-prefix">{{ $t('emailAccount') }}</label>
+        <el-input id="letter-address-prefix" v-model="addForm.email" ref="addRef" type="text" :aria-label="$t('emailAccount')" :placeholder="$t('emailAccount')" autocomplete="off" @keyup.enter="submit" class="letter-address-input">
           <template #append>
-            <div @click.stop="openSelect">
               <el-select
                   ref="mySelect"
                   v-model="addForm.suffix"
                   :placeholder="$t('select')"
-                  class="select"
+                  :aria-label="$t('domain')"
+                  class="letter-address-domain"
               >
                 <el-option
                     v-for="item in domainList"
@@ -94,17 +95,12 @@
                     :value="item"
                 />
               </el-select>
-              <div>
-                <span>{{ addForm.suffix }}</span>
-                <LetterIcon class="setting-icon" name="chevron" width="20" height="20"/>
-              </div>
-            </div>
           </template>
         </el-input>
-        <el-button class="btn" type="primary" @click="submit" :loading="addLoading"
+        </div>
+        <el-button class="letter-dialog-action" type="primary" @click="submit" :loading="addLoading"
         >{{ $t('add') }}
         </el-button>
-      </div>
       <div
           class="add-email-turnstile"
           :class="verifyShow ? 'turnstile-show' : 'turnstile-hide'"
@@ -112,14 +108,18 @@
           data-callback="onTurnstileSuccess"
           data-error-callback="onTurnstileError"
       >
-        <span style="font-size: 12px;color: #F56C6C" v-if="botJsError">{{ $t('verifyModuleFailed') }}</span>
+        <span class="letter-form-error" role="alert" v-if="botJsError">{{ $t('verifyModuleFailed') }}</span>
+      </div>
       </div>
     </el-dialog>
-    <el-dialog append-to-body v-model="setNameShow" :title="$t('changeUserName')">
-      <div class="container">
-        <el-input v-model="accountName" type="text" :placeholder="$t('username')" autocomplete="off" @keyup.enter="setName">
+    <el-dialog append-to-body v-model="setNameShow" :title="$t('changeUserName')" width="400">
+      <div class="letter-dialog-form">
+        <div class="letter-dialog-field">
+        <label class="letter-dialog-label" for="letter-account-name">{{ $t('username') }}</label>
+        <el-input id="letter-account-name" v-model="accountName" type="text" :placeholder="$t('username')" autocomplete="off" @keyup.enter="setName">
         </el-input>
-        <el-button class="btn" type="primary" @click="setName" :loading="setNameLoading"
+        </div>
+        <el-button class="letter-dialog-action" type="primary" @click="setName" :loading="setNameLoading"
         >{{ $t('save') }}
         </el-button>
       </div>
@@ -581,11 +581,6 @@ path[fill="#ffdda1"] {
     }
   }
 
-  .btn {
-    width: 100%;
-    margin-top: 15px;
-  }
-
   .item {
     background-color: var(--el-bg-color);
     border-radius: 8px;
@@ -637,41 +632,13 @@ path[fill="#ffdda1"] {
 }
 
 
-.setting-icon {
-  position: relative;
-  top: 6px;
-}
-
-:deep(.el-input-group__append) {
-  padding: 0 !important;
-  padding-left: 8px !important;
-  background: var(--el-bg-color);
-}
-
-:deep(.el-dialog) {
-  width: 400px !important;
-  @media (max-width: 440px) {
-    width: calc(100% - 40px) !important;
-    margin-right: 20px !important;
-    margin-left: 20px !important;
-  }
-}
-
-.select {
-  position: absolute;
-  right: 30px;
-  width: 100px;
-  opacity: 0;
-  pointer-events: none;
-}
+.letter-address-input :deep(.el-input-group__append) { padding: 0; box-shadow: none; background: var(--letter-surface-paper); }
+.letter-address-domain { width: 170px; max-width: 48vw; margin: 0; }
+.letter-address-domain :deep(.el-select__wrapper) { min-height: 40px; border-radius: 0 var(--el-input-border-radius) var(--el-input-border-radius) 0; }
 
 :deep(.el-pagination .el-select) {
   width: 100px;
   background: var(--el-bg-color);
-}
-
-.add-email-turnstile {
-  margin-top: 15px;
 }
 
 .turnstile-show {
@@ -696,6 +663,6 @@ path[fill="#ffdda1"] {
 .account-box .item .account{display:flex;align-items:center;gap:12px;margin-bottom:8px;text-align:left;width:100%;white-space:normal;font-size:14px}
 .letter-account-choice > span:nth-child(2){min-width:0;flex:1}.letter-account-choice strong{display:block;font-weight:600}.letter-account-choice small{display:block;margin-top:3px;color:var(--letter-muted);overflow-wrap:anywhere;font-size:12px}
 .current-address{display:flex;align-items:center;gap:3px;color:var(--letter-selected-ink);font-size:11px}.current-address .letter-icon{width:16px}
-.account-box .item .opt{color:var(--letter-muted);padding-left:44px;gap:4px}.account-box .item .opt .settings{gap:0}.catch-all-toggle{font-size:11px;padding:0 4px;text-align:left}.catch-all-toggle .letter-icon{width:16px}.account-box .btn{height:40px;border-radius:5px}.address-label{display:block;font-size:13px;font-weight:600;margin-bottom:10px}
+.account-box .item .opt{color:var(--letter-muted);padding-left:44px;gap:4px}.account-box .item .opt .settings{gap:0}.catch-all-toggle{font-size:11px;padding:0 4px;text-align:left}.catch-all-toggle .letter-icon{width:16px}
 @media(max-width:760px){.account-box .item{padding:14px 8px}.current-address{font-size:0}.current-address .letter-icon{width:20px}.account-box .item .opt{padding-left:0}.catch-all-toggle{font-size:10px}}
 </style>

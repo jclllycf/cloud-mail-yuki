@@ -45,10 +45,28 @@ html:root[data-theme] {
 body { color: var(--letter-ink); background: var(--letter-surface-work); }
 button { color: inherit; cursor: pointer; }
 button:disabled { cursor: not-allowed; opacity: .6; }
-html[data-theme] :focus-visible { outline: 2px solid var(--letter-accent) !important; outline-offset: 3px !important; }
+/* Composite controls expose focus on their visible wrapper, never twice on the native input. */
+html[data-theme] :focus-visible:not(:is(.el-input__inner, .el-select__input, .el-textarea__inner, .el-input-tag__input, .el-select__wrapper)) { outline: 2px solid var(--letter-accent) !important; outline-offset: 3px !important; }
+html[data-theme] :is(.el-input__inner, .el-select__input, .el-textarea__inner, .el-input-tag__input, .el-select__wrapper):focus-visible { outline: none !important; }
 html[data-theme] .el-checkbox:has(input:focus-visible) .el-checkbox__inner { outline: 2px solid var(--letter-accent); outline-offset: 3px; }
-html[data-theme] .el-input__wrapper, html[data-theme] .el-select__wrapper, html[data-theme] .el-textarea__inner,
-html[data-theme] .el-input-tag { background: var(--letter-surface-paper); box-shadow: 0 0 0 1px var(--letter-control-border) inset; }
+html:root[data-theme] body :is(.el-input__wrapper, .el-select__wrapper, .el-textarea__inner, .el-input-tag) {
+  background: var(--letter-surface-paper);
+  box-shadow: var(--letter-control-shadow, 0 0 0 1px var(--letter-control-border) inset);
+}
+html:root[data-theme] body :is(.el-input__wrapper, .el-select__wrapper, .el-textarea__inner, .el-input-tag):hover {
+  box-shadow: var(--letter-control-hover-shadow, 0 0 0 1px color-mix(in srgb, var(--letter-accent) 65%, var(--letter-control-border)) inset);
+}
+html:root[data-theme] body :is(.el-input__wrapper, .el-select__wrapper, .el-textarea__inner, .el-input-tag):is(:focus-within, .is-focus, .is-focused) {
+  box-shadow: var(--letter-control-focus-shadow, 0 0 0 2px var(--letter-accent) inset);
+}
+/* Validation wins over hover/focus; disabled controls never suggest an active state. */
+html:root[data-theme] body .el-form-item.is-error :is(.el-input__wrapper, .el-select__wrapper, .el-textarea__inner, .el-input-tag) {
+  box-shadow: var(--letter-control-error-shadow, 0 0 0 2px var(--letter-error) inset);
+}
+html:root[data-theme] body :is(.el-input.is-disabled .el-input__wrapper, .el-textarea.is-disabled .el-textarea__inner, .el-select__wrapper.is-disabled, .el-input-tag.is-disabled) {
+  background: var(--letter-surface-hover);
+  box-shadow: var(--letter-control-shadow, 0 0 0 1px var(--letter-line) inset);
+}
 html[data-theme] .el-button--primary:not(.is-plain) { color: var(--letter-on-accent); }
 html[data-theme] .el-checkbox__input.is-checked .el-checkbox__inner::after { border-color: var(--letter-on-accent); }
 .letter-icon { width: 20px; height: 20px; flex-shrink: 0; vertical-align: middle; }
@@ -69,6 +87,12 @@ html[data-theme] .el-message-box { background: var(--letter-surface-paper); bord
 .el-popper.is-light { background: var(--letter-surface-paper); border: 1px solid var(--letter-line); }
 .el-dialog .el-input, .el-dialog .el-select { min-height: 40px; }
 .el-dialog input { font-size: 14px; }
+/* Dialog content owns its layout after Teleport; no page ancestor is required. */
+.letter-dialog-form { display: grid; gap: 16px; min-width: 0; }
+.letter-dialog-field { display: grid; gap: 8px; min-width: 0; }
+.letter-dialog-label { font-size: 13px; font-weight: 600; color: var(--letter-ink); }
+.letter-dialog-action { width: 100%; min-height: 40px; margin: 0; justify-self: stretch; border-radius: 5px; }
+.letter-form-error { font-size: 12px; color: var(--letter-error); }
 .el-message { max-width: calc(100vw - 24px); white-space: normal !important; }
 .el-message__content { overflow-wrap: anywhere; }
 .el-alert { --el-alert-title-font-size: 14px; }
