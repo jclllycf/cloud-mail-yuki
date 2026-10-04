@@ -1,16 +1,20 @@
 <template>
-  <div :class="accountShow && hasPerm('account:query') ? 'main-box-show' : 'main-box-hide'">
-    <div :class="accountShow && hasPerm('account:query') ? 'block-show' : 'block-hide'" @click="uiStore.accountShow = false"></div>
-    <account  :class="accountShow && hasPerm('account:query') ? 'show' : 'hide'" />
-    <router-view class="main-view" v-slot="{ Component,route }">
-      <keep-alive :include="['email','all-email','send','sys-setting','star','user','role','analysis','reg-key','draft']">
-        <component :is="Component" :key="route.name"/>
-      </keep-alive>
+  <div class="letter-main">
+    <el-dialog :model-value="accountShow && hasPerm('account:query')" @update:model-value="uiStore.accountShow=$event" :title="$t('letter.accountSwitch')" width="560px" align-center class="letter-account-dialog">
+      <account />
+    </el-dialog>
+    <router-view v-slot="{Component,route}">
+      <Transition :css="false" @enter="motion.enter" @leave="motion.leave" @enter-cancelled="motion.cancel">
+        <keep-alive :include="['email','all-email','send','sys-setting','star','user','role','analysis','reg-key','draft']">
+          <component :is="Component" :key="route.name" class="main-view" />
+        </keep-alive>
+      </Transition>
     </router-view>
   </div>
 </template>
 <script setup>
 import account from '@/layout/account/index.vue'
+import {useLetterMotion} from '@/theme/motion.js'
 import {useUiStore} from "@/store/ui.js";
 import {useSettingStore} from "@/store/setting.js";
 import {computed, onBeforeUnmount, onMounted, watch} from "vue";
@@ -20,6 +24,7 @@ import { hasPerm } from "@/perm/perm.js"
 const settingStore = useSettingStore()
 const uiStore = useUiStore();
 const route = useRoute()
+const motion = useLetterMotion(route)
 let  innerWidth =  window.innerWidth
 
 let elNotification = null
@@ -94,87 +99,19 @@ const handleResize = () => {
   if (['content','email','send'].includes(route.meta.name)) {
     if (innerWidth !==  window.innerWidth) {
       innerWidth = window.innerWidth;
-      uiStore.accountShow = window.innerWidth >= 767;
+      uiStore.accountShow = false;
     }
   }
 }
 
 </script>
-<style lang="scss" scoped>
-
-.block-show {
-  position: fixed;
-  @media (max-width: 767px) {
-    position: absolute;
-    right: 0;
-    border: 0;
-    height: 100%;
-    width: 100%;
-    background: #000000;
-    opacity: 0.6;
-    z-index: 10;
-    transition: all 300ms;
-  }
-}
-
-.block-hide {
-  position: fixed;
-  pointer-events: none;
-  transition: all 300ms;
-}
-
-.show {
-  transition: all 100ms;
-  @media (max-width: 767px) {
-    position: fixed;
-    z-index: 100;
-    width: 260px;
-  }
-}
-
-.hide {
-  transition: all 100ms;
-  position: fixed;
-  transform: translateX(-100%);
-  opacity: 0;
-  @media (max-width: 1024px) {
-    width: 260px;
-    z-index: 100;
-  }
-}
-
-
-.main-box-show {
-  display: grid;
-  grid-template-columns: 260px  1fr;
-  height: calc(100% - 60px);
-  @media (max-width: 767px) {
-    grid-template-columns: 1fr;
-  }
-}
-
-.main-box-hide {
-  display: grid;
-  grid-template-columns: 1fr;
-  height: calc(100% - 60px);
-}
-
-
-.main-view {
-  background: var(--el-bg-color);
-}
-
-
-.navigation {
-  height: 30px;
-  border-bottom: solid 1px var(--el-menu-border-color);
-  display: inline-flex;
-  justify-items: center;
-  align-items: center;
-  width: 100%;
-  .tag {
-    background: var(--el-bg-color);
-    margin-left: 5px;
-  }
-}
+<style scoped>
+.letter-main { height:calc(100% - 112px); min-height:0; position:relative; overflow:hidden; }
+.main-view { background:var(--letter-surface-work); }
+@media(max-width:760px){ .letter-main{height:calc(100% - 124px)} }
+</style>
+<style>
+.letter-account-dialog .account-box { height:min(560px,65dvh); }
+.letter-account-dialog .el-dialog__body { padding-top:6px; }
+.letter-reader-workspace .letter-main { height:100%; }
 </style>

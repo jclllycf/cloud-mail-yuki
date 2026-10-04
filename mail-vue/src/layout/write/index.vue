@@ -1,21 +1,17 @@
 <template>
-  <div class="send" v-show="show">
+  <Transition name="letter-compose" @after-enter="focusCompose" @after-leave="restoreComposeFocus"><div class="send" v-show="show" ref="composeRef" role="dialog" aria-modal="true" :aria-label="$t('letter.compose')" tabindex="-1" @keydown="composeKeys">
     <div class="write-box">
       <div class="title">
         <div class="title-left">
-          <span class="title-text">
-            <Icon icon="hugeicons:quill-write-01" width="28" height="28"/>
-          </span>
+          <h2 class="title-text">{{ $t('letter.compose') }}</h2>
           <span class="sender">{{ $t('sender') }}:</span>
           <span class="sender-name">{{ form.name }}</span>
           <span class="send-email"><{{ form.sendEmail }}></span>
         </div>
-        <div @click="close" style="cursor: pointer;">
-          <Icon icon="material-symbols-light:close-rounded" width="22" height="22"/>
-        </div>
+        <div class="compose-utilities"><AppearancePicker /><button class="letter-button letter-icon-button" @click="close" :aria-label="$t('letter.close')"><LetterIcon name="close" /></button></div>
       </div>
       <div class="container">
-        <el-input-tag  @add-tag="addTagChange" tag-type="primary" @input="inputChange" size="default" v-model="form.receiveEmail" >
+        <el-input-tag :aria-label="$t('recipient')" @add-tag="addTagChange" tag-type="primary" @input="inputChange" size="default" v-model="form.receiveEmail" >
           <template #prefix>
             <div class="item-title" >{{ $t('recipient') }}</div>
             <el-select
@@ -39,26 +35,21 @@
           </template>
           <template #suffix>
             <div style="display: flex;margin-right: 3px;">
-              <Icon icon="fa7-solid:user-plus" width="20" height="20" class="add-contact" @click.stop="openContacts" />
+              <button class="letter-button letter-icon-button" :aria-label="$t('recentContacts')" @click.stop="openContacts"><LetterIcon name="users" /></button>
             </div>
           </template>
         </el-input-tag>
-        <el-input v-model="form.subject" :placeholder="t('subject')" />
+        <el-input v-model="form.subject" :aria-label="t('subject')" :placeholder="t('subject')"><template #prefix><span class="compose-subject-label">{{ $t('subject') }}</span></template></el-input>
         <tinyEditor :def-value="defValue" ref="editor" @change="change" @focus="focusChange" />
         <div class="button-item">
-          <div class="att-add" @click="chooseFile">
-            <Icon icon="iconamoon:attachment-fill" width="24" height="24"/>
-          </div>
-          <div class="att-clear" @click="clearContent">
-            <Icon icon="icon-park-outline:clear-format" width="24" height="24 "/>
-          </div>
+          <button class="letter-button att-add" :aria-label="$t('attachments')" @click="chooseFile"><LetterIcon name="attachment" /><span>{{ $t('attachments') }}</span></button>
+          <button class="letter-button letter-icon-button att-clear" @click="clearContent" :aria-label="$t('clear')"><LetterIcon name="delete" /></button>
           <div class="att-list">
             <div class="att-item" v-for="(item,index) in form.attachments" :key="index">
               <Icon v-bind="getIconByName(item.filename)"/>
               <span class="att-filename">{{ item.filename }}</span>
               <span class="att-size">{{ formatBytes(item.size) }}</span>
-              <Icon style="cursor: pointer;" icon="material-symbols-light:close-rounded" @click="delAtt(index)"
-                    width="22" height="22"/>
+              <button class="letter-button letter-icon-button" @click="delAtt(index)" :aria-label="$t('delete')+' '+item.filename"><LetterIcon name="close" /></button>
             </div>
           </div>
           <div>
@@ -90,9 +81,13 @@
         <el-button type="primary" @click="chooseContact">{{t('selectContacts')}}</el-button>
       </div>
     </el-dialog>
-  </div>
+  </div></Transition>
 </template>
 <script setup>
+import LetterIcon from "@/components/letter-icon.vue"
+import AppearancePicker from "@/components/appearance-picker.vue"
+import {watch} from "vue"
+import {useUiStore} from "@/store/ui.js"
 import tinyEditor from '@/components/tiny-editor/index.vue'
 import {h, nextTick, onMounted, onUnmounted, reactive, ref, toRaw, computed} from "vue";
 import {Icon} from "@iconify/vue";
@@ -131,6 +126,20 @@ const accountStore = useAccountStore()
 const editor = ref({})
 const userStore = useUserStore();
 const show = ref(false);
+const composeRef=ref(null);
+const uiStore=useUiStore();
+let composeTrigger=null;
+watch(show, open=>{ uiStore.composing=open; if(open) composeTrigger=document.activeElement; }, {immediate:true});
+onUnmounted(()=>{uiStore.composing=false;});
+function focusCompose(){if(form.sendType==='reply'||form.sendType==='forward')editor.value.focus();else composeRef.value?.querySelector('input')?.focus({preventScroll:true});}
+function restoreComposeFocus(){if(composeTrigger?.isConnected)composeTrigger.focus({preventScroll:true});}
+function composeKeys(event){
+  if(event.key!=='Tab' || document.querySelector('.el-overlay:not([style*="display: none"]),.tox-dialog-wrap'))return;
+  const nodes=[...composeRef.value.querySelectorAll('button:not([disabled]),input,textarea,iframe,[tabindex="0"]')].filter(el=>el.getClientRects().length);
+  const first=nodes[0],last=nodes.at(-1);
+  if(event.shiftKey && document.activeElement===first){event.preventDefault();last?.focus();}
+  else if(!event.shiftKey && document.activeElement===last){event.preventDefault();first?.focus();}
+}
 const percent = ref(0)
 let percentMessage = null
 let sending = false
@@ -269,7 +278,10 @@ function chooseFile() {
   const doc = document.createElement("input")
   doc.setAttribute("type", "file")
   doc.multiple = true;
-  doc.click()
+  doc.hidden = true;
+  composeRef.value.appendChild(doc);
+  doc.addEventListener('cancel', () => doc.remove(), {once:true});
+  // Register before opening the picker; detached controls can emit change early.
   doc.onchange = async (e) => {
 
     const fileList = e.target.files;
@@ -284,8 +296,9 @@ function chooseFile() {
       form.attachments.push({content, filename, size, contentType})
 
     }
-
+    doc.remove();
   }
+  doc.click()
 }
 
 async function sendEmail() {
@@ -529,7 +542,7 @@ function openDraft(draft) {
 }
 
 const handleKeyDown = (event) => {
-  if (event.key === 'Escape') {
+  if (event.key === 'Escape' && show.value && !sending && !showContacts.value && !document.querySelector('.el-overlay:not([style*="display: none"]),.tox-dialog-wrap')) {
     close()
   }
 };
@@ -785,4 +798,23 @@ function close() {
 .icon {
   cursor: pointer;
 }
+</style>
+
+<style scoped>
+.send{background:var(--letter-scrim);display:flex;align-items:center;justify-content:center;padding:28px;height:100dvh;z-index:200}
+.send .write-box{width:min(980px,100%);height:min(820px,calc(100dvh - 56px));max-height:calc(100dvh - 56px);background:var(--letter-surface-paper);border:1px solid var(--letter-line);border-radius:9px;box-shadow:0 20px 70px #00000024;overflow:hidden;display:flex;flex-direction:column;margin:0}
+.send .write-box .title{height:auto;min-height:88px;padding:22px 32px;display:flex;border-bottom:1px solid var(--letter-line);gap:12px;flex-shrink:0;box-shadow:none}
+.send .write-box .title-left{display:flex;align-items:center;gap:6px;flex-wrap:wrap;min-width:0}.send .title-left .title-text{width:100%;font-size:23px;font-weight:600;margin-bottom:8px;color:var(--letter-ink)}.send .title-left .sender,.send .title-left .sender-name,.send .title-left .send-email{font-size:12px;color:var(--letter-muted);margin:0}.send .title-left .send-email{overflow-wrap:anywhere}
+.send .write-box .container{padding:20px 32px 0;display:grid;grid-template-rows:44px 44px minmax(0,1fr) auto;flex:1;min-height:0;gap:0;height:auto}
+.send .container :deep(.el-input__wrapper),.send .container :deep(.el-input-tag){box-shadow:none!important;border-bottom:1px solid var(--letter-line);border-radius:0;background:transparent;padding-inline:0}.send .container :deep(.el-input__wrapper.is-focus),.send .container :deep(.el-input-tag.is-focused){border-color:var(--letter-accent)}.send .item-title,.compose-subject-label{font-size:12px;color:var(--letter-muted);width:56px;display:inline-block}.send .container :deep(.el-input-tag__wrapper){min-height:40px}.send .container :deep(.tox-editor-header){border-bottom:1px solid var(--letter-line)}
+.send .write-box .button-item{min-height:68px;height:auto;border-top:1px solid var(--letter-line);display:flex;align-items:center;gap:4px;padding:12px 0;flex-wrap:wrap}.send .button-item .att-list{flex:1;min-width:0;max-height:100px;overflow:auto}.send .button-item .att-item{display:flex;gap:6px;background:var(--letter-surface-hover);color:var(--letter-ink);border:1px solid var(--letter-line);box-shadow:none;padding:2px 8px;font-size:11px}.send .button-item>.att-add{margin:0;font-size:12px;min-width:90px}.send .button-item .el-button--primary{height:40px;min-width:92px;border-radius:5px}.send .button-item .att-size{color:var(--letter-muted)}
+@media(max-width:760px){.send{padding:0;align-items:stretch}.send .write-box{width:100%;height:100dvh;max-height:100dvh;border:0;border-radius:0}.send .write-box .title{padding:18px 18px;min-height:96px}.send .title-left .title-text{font-size:22px}.send .write-box .container{padding:12px 18px 0;grid-template-rows:auto 44px minmax(0,1fr) auto}.send .container :deep(.el-input-tag){min-height:44px}.send .write-box .button-item{min-height:68px;padding-bottom:max(12px,env(safe-area-inset-bottom))}.send .button-item>.att-add{min-width:36px;font-size:11px}.send .button-item>.att-add span{display:none}}
+</style>
+
+<style scoped>.send .write-box{padding:0}.send .write-box .title{margin-bottom:0}.send .title-left .send-email{white-space:normal}</style>
+<style scoped>.compose-utilities{display:flex;align-items:center;gap:4px;flex-shrink:0}.send .title-left{flex:1}</style>
+<style scoped>
+.send .write-box .title .title-left{display:flex;flex-wrap:wrap;gap:6px;min-width:0}
+.send .write-box .title .title-left .title-text{flex-basis:100%;white-space:nowrap}
+@media(max-width:760px){.send .button-item>.att-add span{display:inline}.send .button-item>.att-add{min-width:76px}}
 </style>

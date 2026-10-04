@@ -1,16 +1,19 @@
 import { defineStore } from 'pinia'
+import {readTheme, applyTheme} from '@/theme/themes.js'
 
 export const useUiStore = defineStore('ui', {
     state: () => ({
         asideShow: window.innerWidth > 1024,
         accountShow: false,
+        composing: false,
         backgroundLoading: true,
         changeNotice: 0,
         writerRef: null,
         changePreview: 0,
         previewData: {},
         key: 0,
-        dark: false,
+        theme: readTheme(),
+        dark: readTheme() === 'cocoa',
         asideCount: {
             email: 0,
             send: 0,
@@ -18,6 +21,10 @@ export const useUiStore = defineStore('ui', {
         }
     }),
     actions: {
+        setTheme(id) {
+            this.theme = applyTheme(id, true)
+            this.dark = this.theme === 'cocoa'
+        },
         showNotice() {
             this.changeNotice ++
         },
@@ -27,6 +34,6 @@ export const useUiStore = defineStore('ui', {
         }
     },
     persist: {
-        pick: ['accountShow','dark'],
+        pick: [], // Appearance has its own validated, versioned storage key.
     },
 })
