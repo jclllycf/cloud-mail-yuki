@@ -34,7 +34,7 @@ import {hasPerm} from '@/perm/perm.js'
 import LetterIcon from '@/components/letter-icon.vue'
 const settingStore=useSettingStore(), ui=useUiStore(), account=useAccountStore(), user=useUserStore(), route=useRoute()
 const adminPerms=['all-email:query','user:query','role:query','setting:query','analysis:query','reg-key:query']
-const adminLinks=[{name:'analysis',label:'analytics',icon:'chart',perm:'analysis:query'},{name:'user',label:'allUsers',icon:'users',perm:'user:query'},{name:'all-email',label:'allMail',icon:'inbox',perm:'all-email:query'},{name:'role',label:'permissions',icon:'lock',perm:'role:query'},{name:'reg-key',label:'inviteCode',icon:'ticket',perm:'reg-key:query'},{name:'sys-setting',label:'SystemSettings',icon:'settings',perm:'setting:query'}]
+const adminLinks=[{name:'analysis',label:'analytics',icon:'chart',perm:'analysis:query'},{name:'user',label:'allUsers',icon:'users',perm:'user:query'},{name:'all-email',label:'allMail',icon:'all-mail',perm:'all-email:query'},{name:'role',label:'permissions',icon:'lock',perm:'role:query'},{name:'reg-key',label:'inviteCode',icon:'ticket',perm:'reg-key:query'},{name:'sys-setting',label:'SystemSettings',icon:'system-settings',perm:'setting:query'}]
 const mailLinks=[{name:'email',label:'inbox',icon:'inbox',perm:null},{name:'send',label:'sent',icon:'send',perm:'email:send'},{name:'draft',label:'drafts',icon:'draft',perm:'email:send'},{name:'star',label:'starred',icon:'star',perm:null}]
 const admin=computed(()=>adminLinks.some(item=>item.name===route.meta.name))
 const canSwitch=computed(()=>hasPerm('account:query') && settingStore.settings.manyEmail===0)

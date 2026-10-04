@@ -1,8 +1,8 @@
 <template>
   <div class="perm-box">
     <div class="header-actions">
-      <Icon class="icon" icon="ion:add-outline" width="23" height="23" @click="openAddRole"/>
-      <Icon class="icon" icon="ion:reload" width="18" height="18" @click="refresh"/>
+      <LetterIcon class="icon" name="plus" width="23" height="23" @click="openAddRole"/>
+      <LetterIcon class="icon" name="refresh" width="18" height="18" @click="refresh"/>
     </div>
     <el-scrollbar class="perm-scrollbar">
       <div class="loading" :class="tableLoading ? 'loading-show' : 'loading-hide'"
@@ -56,7 +56,7 @@
             placement="bottom"
         >
           <template #reference>
-            <Icon class="warning" icon="fe:warning" width="18" height="18"/>
+            <LetterIcon class="warning" name="warning" width="18" height="18"/>
           </template>
           <div style="font-weight: bold;;margin-bottom: 2px;">{{ t('emailInterception') }}</div>
           <div>{{ t('emailInterceptionDesc') }}</div>
@@ -143,7 +143,8 @@
   </div>
 </template>
 <script setup>
-import {Icon} from "@iconify/vue";
+import LetterIcon from "@/components/letter-icon.vue"
+
 import {defineOptions, nextTick, reactive, ref} from "vue";
 import {roleAdd, roleDelete, rolePermTree, roleRoleList, roleSet, roleSetDef} from "@/request/role.js";
 import loading from '@/components/loading/index.vue';

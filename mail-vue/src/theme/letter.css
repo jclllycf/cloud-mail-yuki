@@ -59,10 +59,10 @@ html[data-theme] .el-checkbox__input.is-checked .el-checkbox__inner::after { bor
 .letter-button[aria-pressed=true] { color: var(--letter-accent); background: var(--letter-surface-selected); }
 .letter-icon-button { padding: 7px; min-width: 36px; }
 .letter-identity { background: var(--letter-identity-bg); color: var(--letter-selected-ink); border-radius: 7px; display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; font-weight: 600; flex-shrink: 0; }
-.el-dialog { border: 1px solid var(--letter-line); border-radius: 9px !important; padding: 24px !important; background: var(--letter-surface-paper); }
+html[data-theme] .el-dialog { --el-dialog-bg-color:var(--letter-surface-paper); border: 1px solid var(--letter-line); border-radius: 9px !important; padding: 24px !important; background: var(--letter-surface-paper); }
 .el-dialog__title { font-size: 21px !important; font-weight: 600; }
 .el-dialog__body { padding-top: 12px; }
-.el-message-box { background: var(--letter-surface-paper); border-color: var(--letter-line); border-radius: 9px; }
+html[data-theme] .el-message-box { background: var(--letter-surface-paper); border-color: var(--letter-line); border-radius: 9px; }
 .el-overlay { background: var(--letter-scrim) !important; }
 .el-dropdown-menu { background: var(--letter-surface-paper); padding: 6px !important; }
 .el-dropdown-menu__item { min-height: 36px; border-radius: 4px; color: var(--letter-ink); }

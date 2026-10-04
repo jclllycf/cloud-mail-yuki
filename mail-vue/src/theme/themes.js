@@ -35,6 +35,10 @@ export function readTheme() {
 export function applyTheme(id, persist = false) {
   const theme = themes.find(theme => theme.id === normalizeTheme(id))
   const root = document.documentElement
+  // Hand off first-paint values to semantic roles. A concrete inline legacy
+  // variable would otherwise freeze dialogs to the initial theme after switching.
+  root.style.removeProperty('--el-bg-color')
+  root.style.background = 'var(--letter-surface-work)'
   root.dataset.theme = theme.id
   root.classList.toggle('dark', theme.dark) // Compatibility for existing editors / charts.
   root.style.colorScheme = theme.dark ? 'dark' : 'light'

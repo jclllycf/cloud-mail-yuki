@@ -19,7 +19,7 @@
 
       <div class="header-right">
         <span class="email-count" v-if="total">{{ $t('emailCount', {total: total}) }}</span>
-        <button v-if="showAccountIcon" v-perm="'account:query'" class="letter-button letter-icon-button" :aria-label="$t('letter.accountSwitch')" @click="changeAccountShow"><LetterIcon name="users"/></button>
+        <button v-if="showAccountIcon" v-perm="'account:query'" class="letter-button letter-icon-button" :aria-label="$t('letter.accountSwitch')" @click="changeAccountShow"><LetterIcon name="account"/></button>
       </div>
     </div>
 
@@ -58,11 +58,11 @@
                 <div class="email-sender" :style=" (showStatus ? 'gap: 10px;' : '') + ((item.unread === EmailUnreadEnum.UNREAD && showUnread)  ? 'font-weight: bold' : '')">
                   <div class="email-status" v-if="showStatus">
                     <el-tooltip effect="dark" :content="item.statusIcon.content">
-                      <Icon :icon="item.statusIcon.icon" :style="`color: ${item.statusIcon.color}`" width="20" height="20"/>
+                      <LetterIcon :name="item.statusIcon.icon" :style="`color: ${item.statusIcon.color}`" width="20" height="20"/>
                     </el-tooltip>
                     <div class="del-status" v-if="item.isDel">
                       <el-tooltip effect="dark" :content="item.isDelContent">
-                        <Icon class="icon" icon="mdi:email-remove" width="20" height="20"/>
+                        <LetterIcon class="icon" name="mail-deleted" width="20" height="20"/>
                       </el-tooltip>
                     </div>
                   </div>
@@ -73,7 +73,7 @@
                       <slot name="name" :email="item"> {{ item.name }}</slot>
                     </span>
                     <span>
-                      <Icon v-if="item.isStar" icon="fluent-color:star-16" width="18" height="18"/>
+                      <LetterIcon v-if="item.isStar" name="star" width="18" height="18"/>
                     </span>
                   </span>
                   <span class="phone-time">{{ item.formatCreateTime }}</span>
@@ -94,13 +94,13 @@
                   <div class="user-info" v-if="showUserInfo">
                     <div class="user">
                       <span>
-                        <Icon icon="mynaui:user" width="20" height="20"/>
+                        <LetterIcon name="account" width="20" height="20"/>
                       </span>
                       <span>{{ item.userEmail }}</span>
                     </div>
                     <div class="account">
                       <span>
-                        <Icon icon="mdi-light:email" width="20" height="20"/>
+                        <LetterIcon name="mail" width="20" height="20"/>
                       </span>
                       <span>{{ item.type === 0 ? item.toEmail : item.sendEmail }}</span>
                     </div>
@@ -161,7 +161,7 @@
           <el-dropdown-item v-if="rightClickEmail.code" @click="copyCode(rightClickEmail.code)" >
             <template #default>
               <div class="right-dropdown-item">
-                <Icon icon="fluent-color:clipboard-24" width="20" height="20" />
+                <LetterIcon name="copy" width="20" height="20" />
                 <span>{{t('copyCode')}}</span>
               </div>
             </template>
@@ -169,7 +169,7 @@
           <el-dropdown-item v-if="['email'].includes(props.type)" @click="emailRead(rightClickEmail.emailId)" >
             <template #default>
               <div class="right-dropdown-item">
-                <Icon icon="fluent:mail-read-20-regular" width="20" height="20" />
+                <LetterIcon name="read" width="20" height="20" />
                 <span>{{t('markAsRead')}}</span>
               </div>
             </template>
@@ -177,7 +177,7 @@
           <el-dropdown-item v-if="hasPerm('email:send') && ['email','star'].includes(props.type)" @click="openReply(rightClickEmail)">
             <template #default>
               <div class="right-dropdown-item">
-                <Icon icon="la:reply" width="20" height="20"  />
+                <LetterIcon name="reply" width="20" height="20"  />
                 <span>{{t('reply')}}</span>
               </div>
             </template>
@@ -185,7 +185,7 @@
           <el-dropdown-item v-if="hasPerm('email:send') && ['email','send', 'star'].includes(props.type)" @click="openForward(rightClickEmail)">
             <template #default>
               <div class="right-dropdown-item">
-                <Icon icon="iconoir:arrow-up-right" width="19" height="19"  />
+                <LetterIcon name="forward" width="19" height="19"  />
                 <span>{{t('forward')}}</span>
               </div>
             </template>
@@ -193,7 +193,7 @@
           <el-dropdown-item v-if="['email','send', 'star'].includes(props.type)" @click="starChange(rightClickEmail)">
             <template #default>
               <div class="right-dropdown-item">
-                <Icon icon="solar:star-line-duotone" width="19" height="19"/>
+                <LetterIcon name="star" width="19" height="19"/>
                 <span>{{t('star')}}</span>
               </div>
             </template>
@@ -201,7 +201,7 @@
           <el-dropdown-item v-if="props.type === 'all-email'" @click="handleSearch('user', rightClickEmail.userEmail)">
             <template #default>
               <div class="right-dropdown-item">
-                <Icon icon="iconoir:search" width="20" height="20" />
+                <LetterIcon name="search" width="20" height="20" />
                 <span>{{t('searchUser')}}</span>
               </div>
             </template>
@@ -209,7 +209,7 @@
           <el-dropdown-item v-if="props.type === 'all-email' " @click="handleSearch('account', rightClickEmail.toEmail)">
             <template #default>
               <div class="right-dropdown-item">
-                <Icon icon="iconoir:search" width="20" height="20" />
+                <LetterIcon name="search" width="20" height="20" />
                 <span>{{t('searchEmail')}}</span>
               </div>
             </template>
@@ -217,7 +217,7 @@
           <el-dropdown-item v-if="props.type === 'all-email' " @click="handleSearch('name', rightClickEmail.name)">
             <template #default>
               <div class="right-dropdown-item">
-                <Icon icon="iconoir:search" width="20" height="20" />
+                <LetterIcon name="search" width="20" height="20" />
                 <span>{{t('searchSender')}}</span>
               </div>
             </template>
@@ -225,7 +225,7 @@
           <el-dropdown-item v-if="hasPerm('email:delete')" @click="rightDelete(rightClickEmail.emailId)">
             <template #default>
               <div class="right-dropdown-item">
-                <Icon icon="uiw:delete" width="16" height="20" style="margin-left: 1px;margin-right: 3px" />
+                <LetterIcon name="delete" width="16" height="20" style="margin-left: 1px;margin-right: 3px" />
                 <span>{{t('delete')}}</span>
               </div>
             </template>
@@ -237,7 +237,7 @@
 </template>
 
 <script setup>
-import {Icon} from "@iconify/vue";
+
 import LetterIcon from "@/components/letter-icon.vue"
 import skeletonBlock from "@/components/email-scroll/skeleton/index.vue"
 import {computed, onActivated, reactive, ref, watch, nextTick, onMounted, onUnmounted } from "vue";
@@ -878,14 +878,14 @@ function handleList(list) {
     email.formatCreateTime = fromNow(email.createTime);
     email.test = t('received')
     const statusIconMap = {
-      0: { icon: 'ic:round-mark-email-read', color: 'var(--letter-success)', content: t('received') },
-      1: { icon: 'bi:send-arrow-up-fill',  color: 'var(--letter-success)', content: t('sent') },
-      2: { icon: 'bi:send-check-fill',     color: 'var(--letter-success)', content: t('delivered') },
-      3: { icon: 'bi:send-x-fill',         color: 'var(--letter-error)', content: t('bounced') },
-      8: { icon: 'bi:send-x-fill',         color: 'var(--letter-error)', content: t('bounced') },
-      4: { icon: 'bi:send-exclamation-fill', color: 'var(--letter-warning)', content: t('complained') },
-      5: { icon: 'bi:send-arrow-up-fill',  color: 'var(--letter-warning)', content: t('delayed') },
-      7: { icon: 'ic:round-mark-email-read', color: 'var(--letter-warning)', content: t('noRecipient') },
+      0: { icon: 'read', color: 'var(--letter-success)', content: t('received') },
+      1: { icon: 'sent',  color: 'var(--letter-success)', content: t('sent') },
+      2: { icon: 'delivered',     color: 'var(--letter-success)', content: t('delivered') },
+      3: { icon: 'bounced',         color: 'var(--letter-error)', content: t('bounced') },
+      8: { icon: 'bounced',         color: 'var(--letter-error)', content: t('bounced') },
+      4: { icon: 'mail-warning', color: 'var(--letter-warning)', content: t('complained') },
+      5: { icon: 'sent',  color: 'var(--letter-warning)', content: t('delayed') },
+      7: { icon: 'read', color: 'var(--letter-warning)', content: t('noRecipient') },
     };
 
     if (email.isDel) {

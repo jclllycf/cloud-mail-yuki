@@ -3,64 +3,64 @@ import {getExtName} from "@/utils/file-utils.js";
 export function getIconByName(filename) {
     const extName = getExtName(filename)
     if (['zip', 'rar', '7z', 'tar', 'tgz'].includes(extName)) return {
-        icon: 'mdi:zip-box',
+        name: 'file-archive',
         width: '24px',
         height: '24px',
-        color: '#FBBD08',
+        color: 'var(--letter-muted)',
     };
     if (['png', 'jpg', 'jpeg','gif','webp','jfif'].includes(extName)) return {
-        icon: 'fluent-color:image-24',
+        name: 'file-image',
         width: '24px',
         height: '24px',
         color: ''
     };
     if (['mp4', 'avi', 'mkv', 'mov', 'wmv', 'flv'].includes(extName)) return {
-        icon: 'fluent:video-clip-20-filled',
+        name: 'file-video',
         width: '24px',
         height: '24px',
-        color: '#658bff'
+        color: 'var(--letter-muted)'
     };
     if (['txt','md','ini','conf'].includes(extName)) return {
-        icon: 'fluent-color:document-48',
+        name: 'file-text',
         width: '24px',
         height: '24px',
         color: ''
     };
     if (['doc', 'docx'].includes(extName)) return {
-        icon: 'vscode-icons:file-type-word',
+        name: 'file-word',
         width: '23px',
         height: '23px',
         color: ''
     };
     if (['xls', 'csv', 'xlsx'].includes(extName)) return {
-        icon: 'vscode-icons:file-type-excel',
+        name: 'file-sheet',
         width: '23px',
         height: '23px',
         color: ''
     };
     if (['mp3', 'wav', 'aac', 'ogg', 'flac', 'm4a'].includes(extName)) return {
-        icon: 'lineicons:apple-music',
+        name: 'file-audio',
         width: '24px',
         height: '24px',
-        color: '#e91e63'
+        color: 'var(--letter-muted)'
     };
     if (['ppt', 'pptx', 'pps', 'potx', 'pot'].includes(extName)) return {
-        icon: 'vscode-icons:file-type-powerpoint',
+        name: 'file-slides',
         width: '24px',
         height: '24px',
         color: ''
     };
     if (extName === 'pdf') return {
-        icon: 'material-icon-theme:pdf',
+        name: 'file-pdf',
         width: '24px',
         height: '24px',
         color: ''
     };
     return {
-        icon: "solar:paperclip-rounded-2-bold",
+        name: "file",
         width: '24px',
         height: '24px',
-        color: '#1CBBF0'
+        color: 'var(--letter-muted)'
     };
 
 }

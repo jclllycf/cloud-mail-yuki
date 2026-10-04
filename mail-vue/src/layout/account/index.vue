@@ -96,7 +96,7 @@
               </el-select>
               <div>
                 <span>{{ addForm.suffix }}</span>
-                <Icon class="setting-icon" icon="mingcute:down-small-fill" width="20" height="20"/>
+                <LetterIcon class="setting-icon" name="chevron" width="20" height="20"/>
               </div>
             </div>
           </template>
@@ -127,7 +127,7 @@
   </div>
 </template>
 <script setup>
-import {Icon} from "@iconify/vue";
+
 import LetterIcon from "@/components/letter-icon.vue"
 import {useUiStore} from "@/store/ui.js"
 import {computed, nextTick, reactive, ref, watch} from "vue";
