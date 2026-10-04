@@ -9,10 +9,7 @@ import {VitePWA} from 'vite-plugin-pwa';
 export default defineConfig(({mode}) => {
     const env = loadEnv(mode, process.cwd(), 'VITE')
   return {
-    // Separate only when running two local review servers from the same checkout.
-    cacheDir: env.VITE_REVIEW_CACHE || 'node_modules/.vite',
-    server: {
-      watch: { ignored: ['**/dist-warm-letter/**', '**/warm-letter-build.log'] },
+        server: {
             host: true,
             port: 3001,
             hmr: true,
