@@ -1,5 +1,5 @@
 /* Shared component adapters; all theme differences live in themes.js. */
-html[data-theme] {
+html:root[data-theme] {
   --el-color-primary: var(--letter-accent);
   --el-color-primary-dark-2: var(--letter-accent-hover);
   --el-color-primary-light-3: color-mix(in srgb, var(--letter-accent) 80%, var(--letter-surface-paper));

@@ -2,13 +2,13 @@ import {createApp} from 'vue';
 import App from './App.vue';
 import router from './router';
 import './style.css';
-import './theme/letter.css';
 import {readTheme, applyTheme} from './theme/themes.js';
 applyTheme(readTheme());
 import { init } from '@/init/init.js';
 import { createPinia } from 'pinia';
 import piniaPersistedState from 'pinia-plugin-persistedstate';
 import 'element-plus/theme-chalk/dark/css-vars.css';
+import './theme/letter.css';
 import 'nprogress/nprogress.css';
 import perm from "@/perm/perm.js";
 const pinia = createPinia().use(piniaPersistedState)
