@@ -16,8 +16,8 @@
     const surface = {clay:'#F8F6F2',sage:'#F7F7F0',cocoa:'#201B18'}[appearance];
     document.documentElement.dataset.theme = appearance;
     document.documentElement.classList.toggle('dark', appearance === 'cocoa');
-    document.documentElement.style.background = surface;
-    document.documentElement.style.setProperty('--el-bg-color', surface);
+    document.documentElement.style.setProperty('--letter-surface-work', surface);
+    document.documentElement.style.background = 'var(--letter-surface-work)';
     document.getElementById('theme-color-meta').setAttribute('content', surface);
   </script>
 </head>
@@ -38,7 +38,7 @@
     justify-content: center;
     align-items: center;
     z-index: 500;
-    background: var(--el-bg-color);
+    background: var(--letter-surface-work, #F8F6F2);
   }
 
   .loading-hide {

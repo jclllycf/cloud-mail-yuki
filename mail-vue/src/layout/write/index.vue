@@ -46,7 +46,7 @@
           <button class="letter-button letter-icon-button att-clear" @click="clearContent" :aria-label="$t('clear')"><LetterIcon name="delete" /></button>
           <div class="att-list">
             <div class="att-item" v-for="(item,index) in form.attachments" :key="index">
-              <Icon v-bind="getIconByName(item.filename)"/>
+              <LetterIcon v-bind="getIconByName(item.filename)"/>
               <span class="att-filename">{{ item.filename }}</span>
               <span class="att-size">{{ formatBytes(item.size) }}</span>
               <button class="letter-button letter-icon-button" @click="delAtt(index)" :aria-label="$t('delete')+' '+item.filename"><LetterIcon name="close" /></button>
@@ -71,7 +71,7 @@
         <el-table-column width="55" label="" >
           <template #default>
             <div style="display: flex;">
-              <Icon icon="mage:user" style="color: var(--el-text-color-primary)" width="22" height="22" color="#606266" />
+              <LetterIcon name="account" style="color: var(--el-text-color-primary)" width="22" height="22" color="#606266" />
             </div>
           </template>
         </el-table-column>
@@ -90,7 +90,7 @@ import {watch} from "vue"
 import {useUiStore} from "@/store/ui.js"
 import tinyEditor from '@/components/tiny-editor/index.vue'
 import {h, nextTick, onMounted, onUnmounted, reactive, ref, toRaw, computed} from "vue";
-import {Icon} from "@iconify/vue";
+
 import {useUserStore} from "@/store/user.js";
 import {emailSend} from "@/request/email.js";
 import {isEmail} from "@/utils/verify-utils.js";

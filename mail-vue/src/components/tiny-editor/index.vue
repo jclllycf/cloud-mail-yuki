@@ -11,6 +11,7 @@ import loading from "@/components/loading/index.vue";
 import {useI18n} from 'vue-i18n'
 import {useUiStore} from '@/store/ui.js'
 import {useSettingStore} from '@/store/setting.js'
+import {installTinyIcons} from '@/icons/tiny-icons.js'
 
 defineExpose({
   clearEditor,
@@ -131,6 +132,7 @@ function initEditor() {
     license_key: 'gpl',
     noneditable_class: 'mceNonEditable',
     setup: (ed) => {
+      installTinyIcons(ed);
       editor.value = ed;
       ed.on('init', () => {
         ed.setContent(pendingContent ?? props.defValue);

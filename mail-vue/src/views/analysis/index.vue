@@ -15,7 +15,7 @@
             </div>
             <div class="right">
               <div class="count-icon">
-                <Icon icon="hugeicons:mailbox-01" width="25" height="25"></Icon>
+                <LetterIcon name="inbox" width="25" height="25"></LetterIcon>
               </div>
             </div>
           </div>
@@ -34,7 +34,7 @@
             </div>
             <div class="right">
               <div class="count-icon">
-                <Icon icon="cil:send" width="25" height="25"></Icon>
+                <LetterIcon name="send" width="25" height="25"></LetterIcon>
               </div>
             </div>
           </div>
@@ -53,7 +53,7 @@
             </div>
             <div class="right">
               <div class="count-icon">
-                <Icon icon="lets-icons:e-mail" width="23" height="23"></Icon>
+                <LetterIcon name="mail" width="23" height="23"></LetterIcon>
               </div>
             </div>
           </div>
@@ -72,7 +72,7 @@
             </div>
             <div class="right">
               <div class="count-icon">
-                <Icon icon="iconoir:user" width="25" height="25"></Icon>
+                <LetterIcon name="account" width="25" height="25"></LetterIcon>
               </div>
             </div>
           </div>
@@ -119,7 +119,8 @@
 </template>
 
 <script setup>
-import {Icon} from "@iconify/vue";
+import LetterIcon from "@/components/letter-icon.vue"
+
 import {useTransition} from "@vueuse/core";
 import {defineOptions, onActivated, onDeactivated, onMounted, reactive, ref, watch, computed} from "vue";
 import echarts from "@/echarts/index.js";

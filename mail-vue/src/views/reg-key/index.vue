@@ -1,7 +1,7 @@
 <template>
   <div class="reg-key">
     <div class="header-actions">
-      <Icon class="icon" icon="ion:add-outline" width="23" height="23" @click="openAdd"/>
+      <LetterIcon class="icon" name="plus" width="23" height="23" @click="openAdd"/>
       <div class="search">
         <el-input
             v-model="params.code"
@@ -10,9 +10,9 @@
         >
         </el-input>
       </div>
-      <Icon class="icon" icon="iconoir:search" @click="search" width="20" height="20"/>
-      <Icon class="icon" icon="ion:reload" width="18" height="18" @click="refresh"/>
-      <Icon class="icon" icon="fluent:broom-sparkle-16-regular" width="22" height="22" @click="clearNotUse"/>
+      <LetterIcon class="icon" name="search" @click="search" width="20" height="20"/>
+      <LetterIcon class="icon" name="refresh" width="18" height="18" @click="refresh"/>
+      <LetterIcon class="icon" name="delete" width="22" height="22" @click="clearNotUse"/>
     </div>
 
     <el-scrollbar class="scrollbar">
@@ -43,7 +43,7 @@
             </div>
             <div class="info-right">
               <el-dropdown class="setting">
-                <Icon icon="fluent:settings-24-filled" width="21" height="21" color="#909399"/>
+                <LetterIcon name="settings" width="21" height="21" color="#909399"/>
                 <template #dropdown>
                   <el-dropdown-menu>
                     <el-dropdown-item @click="copyCode(item.code)">{{ $t('copy') }}</el-dropdown-item>
@@ -64,7 +64,7 @@
       <div class="container">
         <el-input v-model="addForm.code" :placeholder="$t('regKey')" @keyup.enter="submit">
           <template #suffix>
-            <Icon @click.stop="genCode" class="gen-code" icon="bitcoin-icons:refresh-filled" width="24" height="24"/>
+            <LetterIcon @click.stop="genCode" class="gen-code" name="refresh" width="24" height="24"/>
           </template>
         </el-input>
         <el-select v-model="addForm.roleId" :placeholder="$t('roleDesc')">
@@ -96,8 +96,9 @@
 </template>
 
 <script setup>
+import LetterIcon from "@/components/letter-icon.vue"
 import {defineOptions, nextTick, reactive, ref, watch} from "vue"
-import {Icon} from "@iconify/vue";
+
 import loading from "@/components/loading/index.vue";
 import {useSettingStore} from "@/store/setting.js";
 import {roleSelectUse} from "@/request/role.js";

@@ -34,7 +34,7 @@
                 </el-select>
                 <div style="color: var(--el-text-color-primary)">
                   <span>{{ suffix }}</span>
-                  <Icon class="setting-icon" icon="mingcute:down-small-fill" width="20" height="20"/>
+                  <LetterIcon class="setting-icon" name="chevron" width="20" height="20"/>
                 </div>
               </div>
             </template>
@@ -46,7 +46,7 @@
           </el-button>
           <el-button v-for="p in oauthProviders" :key="p.key" class="btn" style="margin-top: 10px" @click="oauthLogin(p.key)">
             <el-avatar v-if="p.iconType === 'image'" :src="p.icon" :size="18" style="margin-right: 10px" />
-            <Icon v-else :icon="p.icon" width="18" height="18" style="margin-right: 10px" />
+            <LetterIcon v-else :name="p.icon" width="18" height="18" style="margin-right: 10px" />
             {{ p.label }}
           </el-button>
         </div>
@@ -71,7 +71,7 @@
                 </el-select>
                 <div>
                   <span>{{ suffix }}</span>
-                  <Icon class="setting-icon" icon="mingcute:down-small-fill" width="20" height="20"/>
+                  <LetterIcon class="setting-icon" name="chevron" width="20" height="20"/>
                 </div>
               </div>
             </template>
@@ -98,7 +98,7 @@
           </el-button>
           <el-button v-for="p in oauthProviders" :key="p.key" class="btn" style="margin-top: 10px" @click="oauthLogin(p.key)">
             <el-avatar v-if="p.iconType === 'image'" :src="p.icon" :size="18" style="margin-right: 10px" />
-            <Icon v-else :icon="p.icon" width="18" height="18" style="margin-right: 10px" />
+            <LetterIcon v-else :name="p.icon" width="18" height="18" style="margin-right: 10px" />
             {{ p.label }}
           </el-button>
         </div>
@@ -130,7 +130,7 @@
               </el-select>
               <div>
                 <span>{{ suffix }}</span>
-                <Icon class="setting-icon" icon="mingcute:down-small-fill" width="20" height="20"/>
+                <LetterIcon class="setting-icon" name="chevron" width="20" height="20"/>
               </div>
             </div>
           </template>
@@ -145,12 +145,13 @@
       </div>
     </el-dialog>
     <a v-show="settingStore.settings.projectLink" class="github" href="https://github.com/maillab/cloud-mail">
-      <Icon icon="mingcute:github-line" color="#1890ff" width="20" height="20" />
+      <LetterIcon name="github" color="#1890ff" width="20" height="20" />
     </a>
   </div>
 </template>
 
 <script setup>
+import LetterIcon from "@/components/letter-icon.vue"
 import router from "@/router";
 import {useRoute} from "vue-router";
 import {computed, nextTick, reactive, ref} from "vue";
@@ -162,7 +163,7 @@ import {useSettingStore} from "@/store/setting.js";
 import {useAccountStore} from "@/store/account.js";
 import {useUserStore} from "@/store/user.js";
 import {useUiStore} from "@/store/ui.js";
-import {Icon} from "@iconify/vue";
+
 import {cvtR2Url} from "@/utils/convert.js";
 import {loginUserInfo} from "@/request/my.js";
 import {permsToRouter} from "@/perm/perm.js";
@@ -192,8 +193,8 @@ const oauthProvider = computed(() => {
 
 const oauthProviders = computed(() => {
   const allProviders = [
-    { key: 'google', label: 'Google', icon: 'devicon:google', iconType: 'iconify' },
-    { key: 'github', label: 'GitHub', icon: 'codicon:github-inverted', iconType: 'iconify' },
+    { key: 'google', label: 'Google', icon: 'google', iconType: 'local' },
+    { key: 'github', label: 'GitHub', icon: 'github', iconType: 'local' },
     { key: 'linuxdo', label: 'LinuxDo', icon: '/image/linuxdo.webp', iconType: 'image' },
   ]
   return allProviders.filter(p => settingStore.settings[p.key + 'Switch'] === 0)

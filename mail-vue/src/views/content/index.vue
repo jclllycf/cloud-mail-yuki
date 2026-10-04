@@ -27,7 +27,7 @@
           <section class="att" v-if="email.attList?.length > 0">
             <div class="att-title"><strong>{{ $t('attachments') }}</strong><span>{{ $t('attCount',{total: email.attList.length}) }}</span></div>
             <div class="att-box"><div class="att-item" v-for="att in email.attList" :key="att.attId">
-              <span class="att-icon"><Icon v-bind="getIconByName(att.filename)" /></span><span class="att-name">{{ att.filename }}</span><span class="att-size">{{ formatBytes(att.size) }}</span>
+              <span class="att-icon"><LetterIcon v-bind="getIconByName(att.filename)" /></span><span class="att-name">{{ att.filename }}</span><span class="att-size">{{ formatBytes(att.size) }}</span>
               <div class="opt-icon"><button class="letter-button letter-icon-button" v-if="isImage(att.filename)" @click="showImage(att.key)" :aria-label="$t('preview')+' '+att.filename"><LetterIcon name="eye" /></button><a class="letter-button letter-icon-button" :href="cvtR2Url(att.key)" download :aria-label="$t('letter.download')+' '+att.filename"><LetterIcon name="download" /></a></div>
             </div></div>
           </section>
@@ -44,7 +44,7 @@ import {computed, reactive, ref, watch, onMounted, onUnmounted} from "vue";
 import {useRouter, useRoute} from 'vue-router'
 import {ElMessage, ElMessageBox} from 'element-plus'
 import {emailDelete, emailRead, emailDetail} from "@/request/email.js";
-import {Icon} from "@iconify/vue";
+
 import {useEmailStore} from "@/store/email.js";
 import {useAccountStore} from "@/store/account.js";
 import {formatDetailDate} from "@/utils/day.js";
@@ -291,7 +291,7 @@ const handleDelete = () => {
 .email-title{font-size:30px;font-weight:600;letter-spacing:-.6px;line-height:1.4;overflow-wrap:anywhere;max-width:780px;margin-bottom:26px}
 .email-info{border-bottom:1px solid var(--letter-line);padding-bottom:24px;margin-bottom:32px}.sender-metadata{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.sender-name{display:flex;flex-direction:column;gap:3px;flex:1;min-width:0}.sender-name strong{font-size:14px}.sender-name span{font-size:12px;color:var(--letter-muted);overflow-wrap:anywhere}.date{font-size:11px;color:var(--letter-muted)}
 .recipient-metadata{font-size:12px;color:var(--letter-muted);margin:14px 0 0 46px;overflow-wrap:anywhere}.recipient-metadata summary{cursor:pointer}.recipient-metadata p{margin:8px 0}.email-msg{margin-top:16px}
-.email-text{font-family:inherit;white-space:pre-wrap;word-break:break-word;font-size:16px;line-height:1.85;max-width:720px;color:var(--letter-ink);margin:0}.shadow-html{background:white;/* Sender HTML keeps its original context in every theme. */}.htm-scrollbar{max-width:100%}.bottom-distance{margin-bottom:20px}
+.email-text{font-family:inherit;white-space:pre-wrap;word-break:break-word;font-size:16px;line-height:1.85;max-width:720px;color:var(--letter-ink);margin:0}.shadow-html{background:transparent;color:var(--letter-ink);/* Sender surfaces are owned by the isolated HTML context. */}.htm-scrollbar{max-width:100%}.bottom-distance{margin-bottom:20px}
 .att{margin-top:40px;padding-top:24px;border-top:1px solid var(--letter-line)}.att-title{display:flex;justify-content:space-between;font-size:13px;margin-bottom:12px}.att-title>span{color:var(--letter-muted);font-size:12px}.att-box{display:flex;flex-direction:column}.att-item{padding:10px 0;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--letter-line)}.att-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}.att-size{font-size:11px;color:var(--letter-muted)}.opt-icon{display:flex;align-items:center;gap:2px}.opt-icon a{text-decoration:none}
 @media(max-width:1100px){.container{padding:36px 32px}.header-actions{padding-left:16px;gap:4px}}
 @media(max-width:760px){.header-actions{height:96px;flex-wrap:wrap;padding:0 120px 0 12px;position:relative;align-content:start}.reader-back{height:54px}.reader-actions{height:40px;position:absolute;left:12px;right:12px;bottom:1px;gap:6px}.reader-actions .letter-button{font-size:12px}.reader-actions .letter-icon-button:nth-last-child(2){margin-left:auto}.box{grid-template-rows:96px minmax(0,1fr)}.container{padding:30px 22px 44px;border:0}.email-title{font-size:25px;letter-spacing:-.4px;margin-bottom:24px;line-height:1.4}.date{display:block;width:100%;margin-left:46px;font-size:11px}.email-info{padding-bottom:22px;margin-bottom:28px}.email-text{font-size:15px;line-height:1.85}.recipient-metadata{margin-top:10px;font-size:11px}.att-item{gap:6px;flex-wrap:wrap}.att-name{font-size:12px}.att-size{font-size:10px}.opt-icon .letter-button{padding:6px;min-width:30px}.opt-icon .letter-icon{width:18px}}

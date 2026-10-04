@@ -5,7 +5,7 @@
       <div class="page-heading" v-if="route.meta.name!=='content'"><h1>{{ $t(route.meta.title) }}</h1><p v-if="['email','send','star','draft'].includes(route.meta.name)">{{ accountStore.currentAccount.name || userStore.user.name }} · {{ accountStore.currentAccount.email || userStore.user.email }}</p></div>
     </div>
     <div class="header-utility">
-      <button v-if="route.meta.name!=='content'" v-perm="'email:send'" class="letter-button primary compose-entry" @click="openSend"><LetterIcon name="compose" /><span>{{ $t('letter.compose') }}</span></button>
+      <button v-if="route.meta.name!=='content' && hasPerm('email:send')" v-perm="'email:send'" class="letter-button primary compose-entry" @click="openSend"><LetterIcon name="compose" /><span>{{ $t('letter.compose') }}</span></button>
       <AppearancePicker />
       <button class="letter-button letter-icon-button" :aria-label="$t('letter.notices')" :title="$t('letter.notices')" @click="openNotice"><LetterIcon name="notice" /></button>
       <el-dropdown ref="userinfoRef" trigger="click" @visible-change="e => userInfoShow = e" popper-class="detail-dropdown">
@@ -61,7 +61,7 @@ import LetterIcon from '@/components/letter-icon.vue'
 import AppearancePicker from '@/components/appearance-picker.vue'
 import {useAccountStore} from '@/store/account.js'
 import {logout} from "@/request/login.js";
-import {Icon} from "@iconify/vue";
+
 import {useUiStore} from "@/store/ui.js";
 import {useUserStore} from "@/store/user.js";
 import {useRoute} from "vue-router";

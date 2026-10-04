@@ -51,6 +51,7 @@ export default defineConfig(({mode}) => {
         ],
         resolve: {
             alias: {
+                '@element-plus/icons-vue': path.resolve(__dirname, 'src/icons/element-plus.js'),
                 '@': path.resolve(__dirname, 'src')
             }
         },

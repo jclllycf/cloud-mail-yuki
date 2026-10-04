@@ -39,7 +39,7 @@
               </el-select>
               <div class="search-type">
                 <span>{{ selectTitle }}</span>
-                <Icon class="setting-icon" icon="mingcute:down-small-fill" width="20" height="20"/>
+                <LetterIcon class="setting-icon" name="chevron" width="20" height="20"/>
               </div>
             </div>
           </template>
@@ -51,12 +51,12 @@
           <el-option key="4" :label="$t('selectDeleted')" value="delete"/>
           <el-option key="4" :label="$t('noRecipientTitle')" value="noone"/>
         </el-select>
-        <Icon class="icon" icon="iconoir:search" @click="search" width="20" height="20"/>
-        <Icon class="icon" @click="changeTimeSort" icon="material-symbols-light:timer-arrow-down-outline"
+        <LetterIcon class="icon" name="search" @click="search" width="20" height="20"/>
+        <LetterIcon class="icon" @click="changeTimeSort" name="sort-down"
               v-if="params.timeSort === 0" width="28" height="28"/>
-        <Icon class="icon" @click="changeTimeSort" icon="material-symbols-light:timer-arrow-up-outline" v-else
+        <LetterIcon class="icon" @click="changeTimeSort" name="sort-up" v-else
               width="28" height="28"/>
-        <Icon class="icon clear" icon="fluent:broom-sparkle-16-regular" width="22" height="22" @click="openBathDelete"/>
+        <LetterIcon class="icon clear" name="delete" width="22" height="22" @click="openBathDelete"/>
       </template>
     </emailScroll>
     <el-dialog v-model="showBathDelete" :title="$t('clearEmail')" width="335"
@@ -88,6 +88,7 @@
 </template>
 
 <script setup>
+import LetterIcon from "@/components/letter-icon.vue"
 import {starAdd, starCancel} from "@/request/star.js";
 import emailScroll from "@/components/email-scroll/index.vue"
 import {computed, defineOptions, reactive, ref, watch, onMounted} from "vue";
@@ -98,7 +99,7 @@ import {
   allEmailBatchDelete,
   allEmailLatest
 } from "@/request/all-email.js";
-import {Icon} from "@iconify/vue";
+
 import router from "@/router/index.js";
 import {useI18n} from 'vue-i18n';
 import {toUtc} from "@/utils/day.js";
