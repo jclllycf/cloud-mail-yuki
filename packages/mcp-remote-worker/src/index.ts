@@ -86,24 +86,24 @@ const GetAttachmentSchema = {
 };
 
 const SendEmailSchema = {
-  to: z.union([z.string().email(), z.array(z.string().email()).min(1).max(20)]),
+  to: z.string().email().describe("Single recipient email address."),
   subject: z.string().min(1).max(240),
   text: z.string().max(100000).optional(),
   html: z.string().max(250000).optional(),
-  cc: z.union([z.string().email(), z.array(z.string().email()).min(1).max(20)]).optional(),
-  bcc: z.union([z.string().email(), z.array(z.string().email()).min(1).max(20)]).optional(),
-  confirm: z.literal(true).describe("Must be true only after the user explicitly approves sending this exact email."),
+  cc: z.string().email().optional(),
+  bcc: z.string().email().optional(),
+  confirm: z.boolean().describe("Must be true only after the user explicitly approves sending this exact email."),
 };
 
 const DeleteEmailSchema = {
   emailId: z.number().int().positive(),
-  confirm: z.literal(true).describe("Must be true only after the user explicitly approves moving this email to trash."),
+  confirm: z.boolean().describe("Must be true only after the user explicitly approves moving this email to trash."),
 };
 
 const CreateMailboxSchema = {
   email: z.string().email(),
   password: z.string().min(8).max(128).optional(),
-  confirm: z.literal(true).describe("Must be true only after the user explicitly approves creating this mailbox."),
+  confirm: z.boolean().describe("Must be true only after the user explicitly approves creating this mailbox."),
 };
 
 function jsonResult(data: unknown) {
@@ -672,6 +672,9 @@ function createServer(env: Env, agentMode = false) {
         },
       }, writeScopes),
       async (args) => {
+        if (args.confirm !== true) {
+          return jsonResult({ success: false, error: "Explicit confirmation is required before sending." });
+        }
         if (!args.text && !args.html) {
           return jsonResult({ success: false, error: "Email body is required (text or html)." });
         }
@@ -728,6 +731,9 @@ function createServer(env: Env, agentMode = false) {
         },
       }, writeScopes),
       async (args) => {
+        if (args.confirm !== true) {
+          return jsonResult({ success: false, error: "Explicit confirmation is required before moving email to trash." });
+        }
         const existing = await getEmail(env, args.emailId);
         if (!existing) {
           return jsonResult({ success: false, error: "Email not found in the authenticated Yuki Mail mailbox." });
@@ -772,6 +778,9 @@ function createServer(env: Env, agentMode = false) {
         },
       }, writeScopes),
       async (args) => {
+        if (args.confirm !== true) {
+          return jsonResult({ success: false, error: "Explicit confirmation is required before creating a mailbox." });
+        }
         if (mailboxDomain(args.email) !== mailboxDomain(env.MCP_MAILBOX)) {
           return jsonResult({
             success: false,
