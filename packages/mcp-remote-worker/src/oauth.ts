@@ -321,6 +321,7 @@ async function authorizePost(request: Request, env: OAuthEnv) {
   }
 
   const form = await request.formData();
+  await env.AUTH_KV.put("mcp:diag:last-auth-stage", "form-parsed", { expirationTtl: 300 });
   const paramsMap = new URLSearchParams();
   [
     "response_type",
@@ -340,11 +341,13 @@ async function authorizePost(request: Request, env: OAuthEnv) {
 
   const email = String(form.get("email") || "");
   const password = String(form.get("password") || "");
+  await env.AUTH_KV.put("mcp:diag:last-auth-stage", "before-verify", { expirationTtl: 300 });
   if (!(await verifyYukiCredentials(env, email, password))) {
     await env.AUTH_KV.put(failKey, String(failCount + 1), { expirationTtl: 600 });
     return authPage(env, params, "Invalid Yuki Mail credentials.");
   }
 
+  await env.AUTH_KV.put("mcp:diag:last-auth-stage", "verified", { expirationTtl: 300 });
   await env.AUTH_KV.delete(failKey);
 
   const now = Math.floor(Date.now() / 1000);
@@ -365,10 +368,12 @@ async function authorizePost(request: Request, env: OAuthEnv) {
     env.OAUTH_SIGNING_SECRET,
   );
 
+  await env.AUTH_KV.put("mcp:diag:last-auth-stage", "signed", { expirationTtl: 300 });
   const redirect = new URL(params.redirectUri);
   redirect.searchParams.set("code", code);
   redirect.searchParams.set("state", params.state);
   redirect.searchParams.set("iss", ISSUER);
+  await env.AUTH_KV.put("mcp:diag:last-auth-stage", "redirect-ready", { expirationTtl: 300 });
   return Response.redirect(redirect.toString(), 302);
 }
 
