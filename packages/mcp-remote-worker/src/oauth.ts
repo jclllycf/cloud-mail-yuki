@@ -259,7 +259,7 @@ function authPage(env: OAuthEnv, params: AuthorizeParams, error = "") {
       "cache-control": "no-store",
       "x-frame-options": "DENY",
       "content-security-policy":
-        "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'",
+        "default-src 'none'; style-src 'unsafe-inline'; form-action 'self' https://chatgpt.com; base-uri 'none'; frame-ancestors 'none'",
     },
   });
 }
