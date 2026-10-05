@@ -1,0 +1,3 @@
+# Copy to .dev.vars for local testing. Never commit real secrets.
+# Use a dedicated random value; do not reuse the Yuki Mail password or JWT secret.
+OAUTH_SIGNING_SECRET=replace-with-a-long-random-secret

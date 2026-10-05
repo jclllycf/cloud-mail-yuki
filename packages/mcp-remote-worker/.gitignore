@@ -1,0 +1,7 @@
+node_modules/
+.dev.vars
+.secret-venv/
+install.log
+typecheck.log
+.wrangler/
+dist/

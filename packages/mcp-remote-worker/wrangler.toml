@@ -1,0 +1,29 @@
+name = "yuki-mail-mcp"
+main = "src/index.ts"
+compatibility_date = "2026-09-18"
+compatibility_flags = ["nodejs_compat"]
+keep_vars = true
+
+[observability]
+enabled = true
+
+[[routes]]
+pattern = "mcp.jcllyuki.com"
+custom_domain = true
+
+[[d1_databases]]
+binding = "DB"
+database_name = "cloud-mail"
+database_id = "${D1_DATABASE_ID}"
+
+[[kv_namespaces]]
+binding = "AUTH_KV"
+id = "${KV_NAMESPACE_ID}"
+
+[[r2_buckets]]
+binding = "R2"
+bucket_name = "${R2_BUCKET_NAME}"
+
+[vars]
+MCP_MAILBOX = "${MCP_MAILBOX}"
+MAIL_API_URL = "https://mail.jcllyuki.com"
