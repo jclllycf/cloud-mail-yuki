@@ -23,7 +23,9 @@ type SignedPayload = {
 
 export const ISSUER = "https://mcp.jcllyuki.com";
 export const RESOURCE = ISSUER;
-export const MAIL_SCOPE = "mail.read";
+export const MAIL_READ_SCOPE = "mail.read";
+export const MAIL_WRITE_SCOPE = "mail.write";
+export const MAIL_SCOPE = MAIL_READ_SCOPE;
 
 const CHATGPT_CLIENT_ID = "https://chatgpt.com/oauth/client.json";
 const CHATGPT_REDIRECT_URI = "https://chatgpt.com/connector_platform_oauth_redirect";
@@ -90,8 +92,8 @@ function bearer(request: Request) {
   return match ? match[1] : "";
 }
 
-export function toolSecurity() {
-  return [{ type: "oauth2" as const, scopes: [MAIL_SCOPE] }];
+export function toolSecurity(scopes: string[] = [MAIL_READ_SCOPE]) {
+  return [{ type: "oauth2" as const, scopes }];
 }
 
 function authServerMetadata() {
@@ -102,7 +104,7 @@ function authServerMetadata() {
     response_types_supported: ["code"],
     grant_types_supported: ["authorization_code", "refresh_token"],
     code_challenge_methods_supported: ["S256"],
-    scopes_supported: [MAIL_SCOPE],
+    scopes_supported: [MAIL_READ_SCOPE, MAIL_WRITE_SCOPE],
     token_endpoint_auth_methods_supported: ["none"],
     client_id_metadata_document_supported: true,
     authorization_response_iss_parameter_supported: true,
@@ -113,15 +115,19 @@ function resourceMetadata() {
   return {
     resource: RESOURCE,
     authorization_servers: [ISSUER],
-    scopes_supported: [MAIL_SCOPE],
+    scopes_supported: [MAIL_READ_SCOPE, MAIL_WRITE_SCOPE],
     resource_documentation: "https://jcllyuki.com",
   };
 }
 
-function challenge(error?: string, description?: string) {
+function challenge(
+  error?: string,
+  description?: string,
+  scopes: string[] = [MAIL_READ_SCOPE],
+) {
   const parts = [
     'Bearer resource_metadata="' + ISSUER + '/.well-known/oauth-protected-resource"',
-    'scope="' + MAIL_SCOPE + '"',
+    'scope="' + scopes.join(" ") + '"',
   ];
   if (error) parts.push('error="' + error + '"');
   if (description) parts.push('error_description="' + description.replace(/"/g, "'") + '"');
@@ -131,12 +137,13 @@ function challenge(error?: string, description?: string) {
 export function oauthUnauthorized(
   error = "invalid_token",
   description = "Authentication is required",
+  scopes: string[] = [MAIL_READ_SCOPE],
 ) {
   return new Response(JSON.stringify({ error, error_description: description }), {
     status: 401,
     headers: {
       "content-type": "application/json; charset=utf-8",
-      "www-authenticate": challenge(error, description),
+      "www-authenticate": challenge(error, description, scopes),
       "cache-control": "no-store",
     },
   });
@@ -154,9 +161,14 @@ function oauthError(status: number, error: string, description: string) {
 
 function normalizeScope(scope: string) {
   const requested = new Set(scope.split(/\s+/).filter(Boolean));
-  if (requested.size === 0) requested.add(MAIL_SCOPE);
-  if (requested.size !== 1 || !requested.has(MAIL_SCOPE)) return null;
-  return MAIL_SCOPE;
+  if (requested.size === 0) requested.add(MAIL_READ_SCOPE);
+  for (const value of requested) {
+    if (value !== MAIL_READ_SCOPE && value !== MAIL_WRITE_SCOPE) return null;
+  }
+  if (!requested.has(MAIL_READ_SCOPE)) return null;
+  return requested.has(MAIL_WRITE_SCOPE)
+    ? MAIL_READ_SCOPE + " " + MAIL_WRITE_SCOPE
+    : MAIL_READ_SCOPE;
 }
 
 type AuthorizeParams =
@@ -239,7 +251,8 @@ function authPage(env: OAuthEnv, params: AuthorizeParams, error = "") {
     '.scope{margin:18px 0 0;padding:12px;border-radius:10px;background:#f4eee6;color:#655a53;font-size:12px;line-height:1.5}.error{margin:0 0 14px;padding:10px 12px;border-radius:9px;background:#fff0ed;color:#9b3d2d;font-size:13px}' +
     '</style></head><body><main class="card">' +
     '<div class="brand"><span class="mark">✉</span><div><h1>Connect Yuki Mail</h1><p class="tag">A quiet place for your letters.</p></div></div>' +
-    '<p class="copy">Sign in with your Yuki Mail administrator account to allow ChatGPT read-only access to <strong>' +
+    '<p class="copy">Sign in with your Yuki Mail administrator account to allow ChatGPT ' +
+    (params.scope.includes(MAIL_WRITE_SCOPE) ? 'read and controlled write access to <strong>' : 'read-only access to <strong>') +
     escapeHtml(env.MCP_MAILBOX) +
     "</strong>.</p>" +
     errorHtml +
@@ -250,7 +263,11 @@ function authPage(env: OAuthEnv, params: AuthorizeParams, error = "") {
     '" readonly autocomplete="username"></label>' +
     '<label>Password<input class="input" type="password" name="password" required autocomplete="current-password"></label>' +
     '<button class="button" type="submit">Connect to ChatGPT</button></form>' +
-    '<div class="scope"><strong>Permission:</strong> read messages, search mail, read verification codes, and preview attachments. Sending, deleting, and creating mailboxes are not available in this V1 connection.</div>' +
+    '<div class="scope"><strong>Permission:</strong> ' +
+    (params.scope.includes(MAIL_WRITE_SCOPE)
+      ? 'read mail plus controlled send, soft-delete, and mailbox creation. Write actions are state-changing and require explicit approval in ChatGPT.'
+      : 'read messages, search mail, read verification codes, and preview attachments. Sending, deleting, and creating mailboxes are not available in this connection.') +
+    '</div>' +
     "</main></body></html>";
 
   return new Response(html, {
@@ -392,7 +409,7 @@ async function issueTokens(env: OAuthEnv, source: SignedPayload) {
       iss: ISSUER,
       aud: RESOURCE,
       sub: env.MCP_MAILBOX,
-      scope: MAIL_SCOPE,
+      scope: source.scope,
       client_id: source.client_id,
       iat: now,
       exp: now + ACCESS_TTL_SECONDS,
@@ -406,7 +423,7 @@ async function issueTokens(env: OAuthEnv, source: SignedPayload) {
       iss: ISSUER,
       aud: RESOURCE,
       sub: env.MCP_MAILBOX,
-      scope: MAIL_SCOPE,
+      scope: source.scope,
       client_id: source.client_id,
       iat: now,
       exp: now + REFRESH_TTL_SECONDS,
@@ -419,7 +436,7 @@ async function issueTokens(env: OAuthEnv, source: SignedPayload) {
     token_type: "Bearer",
     expires_in: ACCESS_TTL_SECONDS,
     refresh_token: refreshToken,
-    scope: MAIL_SCOPE,
+    scope: source.scope,
   };
 }
 
@@ -483,7 +500,7 @@ async function token(request: Request, env: OAuthEnv) {
       payload.iss !== ISSUER ||
       payload.aud !== RESOURCE ||
       payload.sub.toLowerCase() !== env.MCP_MAILBOX.toLowerCase() ||
-      payload.scope !== MAIL_SCOPE ||
+      !normalizeScope(payload.scope) ||
       payload.client_id !== clientId
     ) {
       return oauthError(400, "invalid_grant", "Refresh token is invalid or expired");
@@ -497,18 +514,25 @@ async function token(request: Request, env: OAuthEnv) {
   return oauthError(400, "unsupported_grant_type", "Unsupported grant type");
 }
 
-export async function authenticateMcpRequest(request: Request, env: OAuthEnv) {
+export async function authenticateMcpRequest(
+  request: Request,
+  env: OAuthEnv,
+  requiredScopes: string[] = [MAIL_READ_SCOPE],
+) {
   const value = bearer(request);
   if (!value) return false;
   const payload = await verify(value, env.OAUTH_SIGNING_SECRET);
-  return Boolean(
-    payload &&
-      payload.typ === "access" &&
-      payload.iss === ISSUER &&
-      payload.aud === RESOURCE &&
-      payload.sub.toLowerCase() === env.MCP_MAILBOX.toLowerCase() &&
-      payload.scope.split(/\s+/).includes(MAIL_SCOPE),
-  );
+  if (
+    !payload ||
+    payload.typ !== "access" ||
+    payload.iss !== ISSUER ||
+    payload.aud !== RESOURCE ||
+    payload.sub.toLowerCase() !== env.MCP_MAILBOX.toLowerCase()
+  ) {
+    return false;
+  }
+  const granted = new Set(payload.scope.split(/\s+/).filter(Boolean));
+  return requiredScopes.every((scope) => granted.has(scope));
 }
 
 export async function handleOAuthRequest(

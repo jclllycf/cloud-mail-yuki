@@ -3,6 +3,8 @@ import { McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
 import {
   ISSUER,
+  MAIL_READ_SCOPE,
+  MAIL_WRITE_SCOPE,
   authenticateMcpRequest,
   handleOAuthRequest,
   oauthUnauthorized,
@@ -83,6 +85,27 @@ const GetAttachmentSchema = {
   maxTextLength: z.number().int().min(100).max(20000).default(8000),
 };
 
+const SendEmailSchema = {
+  to: z.union([z.string().email(), z.array(z.string().email()).min(1).max(20)]),
+  subject: z.string().min(1).max(240),
+  text: z.string().max(100000).optional(),
+  html: z.string().max(250000).optional(),
+  cc: z.union([z.string().email(), z.array(z.string().email()).min(1).max(20)]).optional(),
+  bcc: z.union([z.string().email(), z.array(z.string().email()).min(1).max(20)]).optional(),
+  confirm: z.literal(true).describe("Must be true only after the user explicitly approves sending this exact email."),
+};
+
+const DeleteEmailSchema = {
+  emailId: z.number().int().positive(),
+  confirm: z.literal(true).describe("Must be true only after the user explicitly approves moving this email to trash."),
+};
+
+const CreateMailboxSchema = {
+  email: z.string().email(),
+  password: z.string().min(8).max(128).optional(),
+  confirm: z.literal(true).describe("Must be true only after the user explicitly approves creating this mailbox."),
+};
+
 function jsonResult(data: unknown) {
   return {
     content: [
@@ -94,14 +117,17 @@ function jsonResult(data: unknown) {
   };
 }
 
-function authToolConfig<T extends Record<string, unknown>>(config: T): T {
+function authToolConfig<T extends Record<string, unknown>>(
+  config: T,
+  scopes: string[] = [MAIL_READ_SCOPE],
+): T {
   const meta = (config as { _meta?: Record<string, unknown> })._meta || {};
   return {
     ...config,
-    securitySchemes: toolSecurity(),
+    securitySchemes: toolSecurity(scopes),
     _meta: {
       ...meta,
-      securitySchemes: toolSecurity(),
+      securitySchemes: toolSecurity(scopes),
     },
   } as T;
 }
@@ -338,10 +364,52 @@ function extractVerificationCode(text: string, subject = "") {
   return fallback?.[1] || null;
 }
 
-function createServer(env: Env) {
+const PUBLIC_TOKEN_KEY = "public_key:";
+
+async function publicApiRequest<T>(
+  env: Env,
+  endpoint: string,
+  options: RequestInit = {},
+): Promise<T> {
+  const token = await env.AUTH_KV.get(PUBLIC_TOKEN_KEY);
+  if (!token) {
+    throw new Error("Yuki Mail public API token is not configured. Generate one in the Yuki Mail admin interface before using write actions.");
+  }
+
+  const response = await fetch(
+    env.MAIL_API_URL.replace(/\/$/, "") + (endpoint.startsWith("/") ? endpoint : "/" + endpoint),
+    {
+      ...options,
+      headers: {
+        Authorization: token,
+        "content-type": "application/json",
+        ...(options.headers || {}),
+      },
+    },
+  );
+
+  let payload: any;
+  try {
+    payload = await response.json();
+  } catch {
+    throw new Error("Yuki Mail API returned a non-JSON response (HTTP " + response.status + ").");
+  }
+
+  if (!response.ok || (payload.code !== undefined && payload.code !== 0 && payload.code !== 200)) {
+    throw new Error(payload.msg || payload.message || ("Yuki Mail API request failed with HTTP " + response.status));
+  }
+
+  return (payload.data !== undefined ? payload.data : payload) as T;
+}
+
+function mailboxDomain(mailbox: string) {
+  return mailbox.split("@").pop()?.toLowerCase() || "";
+}
+
+function createServer(env: Env, agentMode = false) {
   const server = new McpServer({
-    name: "yuki-mail-readonly",
-    version: "0.2.0",
+    name: agentMode ? "yuki-mail-agent" : "yuki-mail-readonly",
+    version: "0.3.0",
   });
 
   server.registerTool(
@@ -587,6 +655,158 @@ function createServer(env: Env) {
     },
   );
 
+  if (agentMode) {
+    const writeScopes = [MAIL_READ_SCOPE, MAIL_WRITE_SCOPE];
+
+    server.registerTool(
+      "cloud_mail_send",
+      authToolConfig({
+        title: "Send Yuki Mail email",
+        description: "Send a real email from the authenticated Yuki Mail mailbox. This is irreversible once delivered and must only be used after the user explicitly approves the exact recipients, subject, and body.",
+        inputSchema: SendEmailSchema,
+        annotations: {
+          readOnlyHint: false,
+          destructiveHint: true,
+          openWorldHint: true,
+          idempotentHint: false,
+        },
+      }, writeScopes),
+      async (args) => {
+        if (!args.text && !args.html) {
+          return jsonResult({ success: false, error: "Email body is required (text or html)." });
+        }
+
+        try {
+          const result = await publicApiRequest<{
+            emailId?: number;
+            status?: string;
+            messageId?: string;
+            toEmail?: string;
+            subject?: string;
+          }>(env, "/public/send", {
+            method: "POST",
+            body: JSON.stringify({
+              from: env.MCP_MAILBOX,
+              to: args.to,
+              subject: args.subject,
+              text: args.text,
+              html: args.html,
+              cc: args.cc,
+              bcc: args.bcc,
+            }),
+          });
+
+          return jsonResult({
+            success: true,
+            account: env.MCP_MAILBOX,
+            emailId: result.emailId,
+            status: result.status || "sent",
+            to: result.toEmail || args.to,
+            subject: result.subject || args.subject,
+            messageId: result.messageId || undefined,
+          });
+        } catch (error) {
+          return jsonResult({
+            success: false,
+            error: error instanceof Error ? error.message : String(error),
+          });
+        }
+      },
+    );
+
+    server.registerTool(
+      "cloud_mail_delete",
+      authToolConfig({
+        title: "Move Yuki Mail email to trash",
+        description: "Soft-delete one email by moving it to trash. Only emails belonging to the authenticated Yuki Mail mailbox can be changed. Requires explicit user approval.",
+        inputSchema: DeleteEmailSchema,
+        annotations: {
+          readOnlyHint: false,
+          destructiveHint: true,
+          openWorldHint: false,
+          idempotentHint: true,
+        },
+      }, writeScopes),
+      async (args) => {
+        const existing = await getEmail(env, args.emailId);
+        if (!existing) {
+          return jsonResult({ success: false, error: "Email not found in the authenticated Yuki Mail mailbox." });
+        }
+
+        try {
+          const result = await publicApiRequest<{
+            emailId?: number;
+            deleted?: boolean;
+            isDel?: number;
+          }>(env, "/public/email/" + args.emailId, {
+            method: "DELETE",
+          });
+
+          return jsonResult({
+            success: true,
+            account: env.MCP_MAILBOX,
+            emailId: result.emailId || args.emailId,
+            deleted: result.deleted !== false,
+            note: "Email moved to trash. It can be restored from the Yuki Mail web interface.",
+          });
+        } catch (error) {
+          return jsonResult({
+            success: false,
+            error: error instanceof Error ? error.message : String(error),
+          });
+        }
+      },
+    );
+
+    server.registerTool(
+      "cloud_mail_create_mailbox",
+      authToolConfig({
+        title: "Create Yuki Mail mailbox",
+        description: "Create a new mailbox under the same domain as the authenticated Yuki Mail account. Requires explicit user approval. If a password is provided it is used as the initial login password.",
+        inputSchema: CreateMailboxSchema,
+        annotations: {
+          readOnlyHint: false,
+          destructiveHint: false,
+          openWorldHint: false,
+          idempotentHint: false,
+        },
+      }, writeScopes),
+      async (args) => {
+        if (mailboxDomain(args.email) !== mailboxDomain(env.MCP_MAILBOX)) {
+          return jsonResult({
+            success: false,
+            error: "New mailboxes are restricted to the authenticated Yuki Mail domain.",
+          });
+        }
+
+        try {
+          await publicApiRequest<unknown>(env, "/public/addUser", {
+            method: "POST",
+            body: JSON.stringify({
+              list: [{
+                email: args.email,
+                password: args.password || undefined,
+              }],
+            }),
+          });
+
+          return jsonResult({
+            success: true,
+            createdEmail: args.email,
+            note: args.password
+              ? "Mailbox created with the supplied initial password."
+              : "Mailbox created. No password was returned; set/reset one in the Yuki Mail admin interface if interactive login is needed.",
+          });
+        } catch (error) {
+          return jsonResult({
+            success: false,
+            error: error instanceof Error ? error.message : String(error),
+          });
+        }
+      },
+    );
+  }
+
   return server;
 }
 
@@ -646,9 +866,12 @@ export default {
     if (url.pathname === "/health") {
       return Response.json({
         ok: true,
-        service: "yuki-mail-readonly-mcp",
-        version: "0.2.0",
-        mode: "readonly",
+        service: "yuki-mail-remote-mcp",
+        version: "0.3.0",
+        endpoints: {
+          readonly: ISSUER + "/mcp",
+          agent: ISSUER + "/agent/mcp",
+        },
         mailbox: env.MCP_MAILBOX,
         oauth: "oauth2.1-pkce",
       }, {
@@ -659,15 +882,19 @@ export default {
     if (url.pathname === "/") {
       return Response.json({
         service: "Yuki Mail Remote MCP",
-        endpoint: ISSUER + "/mcp",
-        mode: "readonly",
+        endpoints: {
+          readonly: ISSUER + "/mcp",
+          agent: ISSUER + "/agent/mcp",
+        },
         authentication: "OAuth 2.1 + PKCE",
       }, {
         headers: { "cache-control": "no-store" },
       });
     }
 
-    if (url.pathname !== "/mcp") {
+    const agentMode = url.pathname === "/agent/mcp";
+    const readOnlyMode = url.pathname === "/mcp";
+    if (!agentMode && !readOnlyMode) {
       return new Response("Not Found", { status: 404 });
     }
 
@@ -678,11 +905,21 @@ export default {
       });
     }
 
-    if (!(await authenticateMcpRequest(request, env))) {
-      return oauthUnauthorized();
+    const requiredScopes = agentMode
+      ? [MAIL_READ_SCOPE, MAIL_WRITE_SCOPE]
+      : [MAIL_READ_SCOPE];
+
+    if (!(await authenticateMcpRequest(request, env, requiredScopes))) {
+      return oauthUnauthorized(
+        "invalid_token",
+        agentMode
+          ? "Yuki Mail Agent requires read and write authorization"
+          : "Yuki Mail read authorization is required",
+        requiredScopes,
+      );
     }
 
-    const handler = createMcpHandler(() => createServer(env));
+    const handler = createMcpHandler(() => createServer(env, agentMode));
     const response = await handler(request, env, ctx);
     response.headers.set("cache-control", "no-store");
     return response;
