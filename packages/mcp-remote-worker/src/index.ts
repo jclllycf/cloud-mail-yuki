@@ -914,9 +914,13 @@ export default {
     if (agentMode) {
       const accept = request.headers.get("accept") || "";
       const contentType = request.headers.get("content-type") || "";
+      const authorization = request.headers.get("authorization") || "";
       await env.AUTH_KV.put(
         "mcp:diag:last-mcp-stage",
-        "request:" + request.method + ":accept=" + accept.slice(0, 80) + ":content-type=" + contentType.slice(0, 80),
+        "request:" + request.method +
+          ":auth=" + (authorization.toLowerCase().startsWith("bearer ") ? "bearer" : "none") +
+          ":accept=" + accept.slice(0, 60) +
+          ":content-type=" + contentType.slice(0, 60),
         { expirationTtl: 600 },
       );
     }
