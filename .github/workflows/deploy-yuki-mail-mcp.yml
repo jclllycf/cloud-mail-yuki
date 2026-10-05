@@ -57,9 +57,13 @@ jobs:
           set -euo pipefail
 
           D1_NAME="cloud-mail"
+          cat > wrangler-discovery.toml <<'EOF'
+          name = "yuki-mail-mcp-discovery"
+          compatibility_date = "2026-09-18"
+          EOF
 
           if [ -z "${D1_DATABASE_ID:-}" ]; then
-            D1_JSON="$(npx wrangler d1 list --json --cwd \"$RUNNER_TEMP\")"
+            D1_JSON="$(npx wrangler d1 list --json --config wrangler-discovery.toml)"
             D1_DATABASE_ID="$(echo "$D1_JSON" | jq -r '
               map(select(.name == "cloud-mail-yuki" or .name == "cloud-mail"))
               | .[0].uuid // empty
@@ -69,7 +73,7 @@ jobs:
               | .[0].name // empty
             ')"
           else
-            D1_JSON="$(npx wrangler d1 list --json --cwd \"$RUNNER_TEMP\")"
+            D1_JSON="$(npx wrangler d1 list --json --config wrangler-discovery.toml)"
             MATCHED_NAME="$(echo "$D1_JSON" | jq -r --arg id "$D1_DATABASE_ID" '
               map(select(.uuid == $id)) | .[0].name // empty
             ')"
@@ -84,7 +88,7 @@ jobs:
           fi
 
           if [ -z "${KV_NAMESPACE_ID:-}" ]; then
-            KV_JSON="$(npx wrangler kv namespace list --cwd \"$RUNNER_TEMP\")"
+            KV_JSON="$(npx wrangler kv namespace list --config wrangler-discovery.toml)"
             KV_NAMESPACE_ID="$(echo "$KV_JSON" | jq -r '
               map(select(.title == "cloud-mail-yuki" or .title == "cloud-mail"))
               | .[0].id // empty
