@@ -35,14 +35,12 @@ jobs:
           cache: "npm"
           cache-dependency-path: "packages/mcp-remote-worker/package-lock.json"
 
-      - name: Validate required deployment values
+      - name: Validate core deployment values
         shell: bash
         run: |
           set -euo pipefail
           test -n "$CLOUDFLARE_API_TOKEN" || (echo "Missing CLOUDFLARE_API_TOKEN" && exit 1)
           test -n "$CLOUDFLARE_ACCOUNT_ID" || (echo "Missing CLOUDFLARE_ACCOUNT_ID" && exit 1)
-          test -n "$D1_DATABASE_ID" || (echo "Missing D1_DATABASE_ID" && exit 1)
-          test -n "$KV_NAMESPACE_ID" || (echo "Missing KV_NAMESPACE_ID" && exit 1)
           test -n "$R2_BUCKET_NAME" || (echo "Missing R2_BUCKET_NAME" && exit 1)
           test -n "$MCP_MAILBOX" || (echo "Missing MCP_MAILBOX" && exit 1)
           test -n "$JWT_SECRET" || (echo "Missing JWT_SECRET" && exit 1)
@@ -52,8 +50,60 @@ jobs:
         working-directory: packages/mcp-remote-worker
         run: npm ci --legacy-peer-deps
 
+      - name: Resolve existing Cloud Mail bindings
+        working-directory: packages/mcp-remote-worker
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          D1_NAME="cloud-mail"
+
+          if [ -z "${D1_DATABASE_ID:-}" ]; then
+            D1_JSON="$(npx wrangler d1 list --json)"
+            D1_DATABASE_ID="$(echo "$D1_JSON" | jq -r '
+              map(select(.name == "cloud-mail-yuki" or .name == "cloud-mail"))
+              | .[0].uuid // empty
+            ')"
+            D1_NAME="$(echo "$D1_JSON" | jq -r '
+              map(select(.name == "cloud-mail-yuki" or .name == "cloud-mail"))
+              | .[0].name // empty
+            ')"
+          else
+            D1_JSON="$(npx wrangler d1 list --json)"
+            MATCHED_NAME="$(echo "$D1_JSON" | jq -r --arg id "$D1_DATABASE_ID" '
+              map(select(.uuid == $id)) | .[0].name // empty
+            ')"
+            if [ -n "$MATCHED_NAME" ]; then
+              D1_NAME="$MATCHED_NAME"
+            fi
+          fi
+
+          if [ -z "$D1_DATABASE_ID" ]; then
+            echo "Could not resolve existing Cloud Mail D1 database"
+            exit 1
+          fi
+
+          if [ -z "${KV_NAMESPACE_ID:-}" ]; then
+            KV_JSON="$(npx wrangler kv namespace list)"
+            KV_NAMESPACE_ID="$(echo "$KV_JSON" | jq -r '
+              map(select(.title == "cloud-mail-yuki" or .title == "cloud-mail"))
+              | .[0].id // empty
+            ')"
+          fi
+
+          if [ -z "$KV_NAMESPACE_ID" ]; then
+            echo "Could not resolve existing Cloud Mail KV namespace"
+            exit 1
+          fi
+
+          echo "D1_DATABASE_ID=$D1_DATABASE_ID" >> "$GITHUB_ENV"
+          echo "D1_DATABASE_NAME=$D1_NAME" >> "$GITHUB_ENV"
+          echo "KV_NAMESPACE_ID=$KV_NAMESPACE_ID" >> "$GITHUB_ENV"
+
       - name: Typecheck
         working-directory: packages/mcp-remote-worker
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
         run: npm run build
 
       - name: Render isolated Wrangler config
@@ -62,6 +112,7 @@ jobs:
         run: |
           set -euo pipefail
           cp wrangler.toml wrangler-action.toml
+          sed -i "s|database_name = \"cloud-mail\"|database_name = \"$D1_DATABASE_NAME\"|g" wrangler-action.toml
           sed -i "s|\${D1_DATABASE_ID}|$D1_DATABASE_ID|g" wrangler-action.toml
           sed -i "s|\${KV_NAMESPACE_ID}|$KV_NAMESPACE_ID|g" wrangler-action.toml
           sed -i "s|\${R2_BUCKET_NAME}|$R2_BUCKET_NAME|g" wrangler-action.toml
