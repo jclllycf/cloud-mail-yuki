@@ -953,7 +953,18 @@ export default {
       if (agentMode) {
         await env.AUTH_KV.put("mcp:diag:last-mcp-stage", "handler-start", { expirationTtl: 600 });
       }
-      const response = await handler(request, env, ctx);
+
+      // createMcpHandler is mounted on /mcp internally. Preserve the public
+      // /agent/mcp endpoint but normalize the path before handing the request
+      // to the SDK so authenticated discovery and tool calls don't 404.
+      let handlerRequest = request;
+      if (agentMode) {
+        const normalizedUrl = new URL(request.url);
+        normalizedUrl.pathname = "/mcp";
+        handlerRequest = new Request(normalizedUrl.toString(), request);
+      }
+
+      const response = await handler(handlerRequest, env, ctx);
       if (agentMode) {
         await env.AUTH_KV.put(
           "mcp:diag:last-mcp-stage",
