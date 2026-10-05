@@ -59,7 +59,7 @@ jobs:
           D1_NAME="cloud-mail"
 
           if [ -z "${D1_DATABASE_ID:-}" ]; then
-            D1_JSON="$(npx wrangler d1 list --json)"
+            D1_JSON="$(npx wrangler d1 list --json --cwd \"$RUNNER_TEMP\")"
             D1_DATABASE_ID="$(echo "$D1_JSON" | jq -r '
               map(select(.name == "cloud-mail-yuki" or .name == "cloud-mail"))
               | .[0].uuid // empty
@@ -69,7 +69,7 @@ jobs:
               | .[0].name // empty
             ')"
           else
-            D1_JSON="$(npx wrangler d1 list --json)"
+            D1_JSON="$(npx wrangler d1 list --json --cwd \"$RUNNER_TEMP\")"
             MATCHED_NAME="$(echo "$D1_JSON" | jq -r --arg id "$D1_DATABASE_ID" '
               map(select(.uuid == $id)) | .[0].name // empty
             ')"
@@ -84,7 +84,7 @@ jobs:
           fi
 
           if [ -z "${KV_NAMESPACE_ID:-}" ]; then
-            KV_JSON="$(npx wrangler kv namespace list)"
+            KV_JSON="$(npx wrangler kv namespace list --cwd \"$RUNNER_TEMP\")"
             KV_NAMESPACE_ID="$(echo "$KV_JSON" | jq -r '
               map(select(.title == "cloud-mail-yuki" or .title == "cloud-mail"))
               | .[0].id // empty
