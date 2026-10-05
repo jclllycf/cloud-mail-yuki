@@ -613,6 +613,31 @@ export default {
     const oauthResponse = await handleOAuthRequest(request, env);
     if (oauthResponse) return oauthResponse;
 
+    if (url.pathname === "/_diag-8f31c9/oauth-deps") {
+      const started = Date.now();
+      const kvStarted = Date.now();
+      await env.AUTH_KV.get("mcp:diag:probe");
+      const kvMs = Date.now() - kvStarted;
+
+      const d1Started = Date.now();
+      const row = await env.DB.prepare(`
+        SELECT status, is_del AS isDel
+        FROM user
+        WHERE LOWER(email) = LOWER(?)
+        LIMIT 1
+      `).bind(env.MCP_MAILBOX).first<{ status: number; isDel: number }>();
+      const d1Ms = Date.now() - d1Started;
+
+      return Response.json({
+        ok: true,
+        kvMs,
+        d1Ms,
+        totalMs: Date.now() - started,
+        userFound: Boolean(row),
+        userActive: Boolean(row && row.status === 0 && row.isDel === 0),
+      }, { headers: { "cache-control": "no-store" } });
+    }
+
     if (url.pathname === "/health") {
       return Response.json({
         ok: true,
