@@ -374,7 +374,14 @@ async function authorizePost(request: Request, env: OAuthEnv) {
   redirect.searchParams.set("state", params.state);
   redirect.searchParams.set("iss", ISSUER);
   await env.AUTH_KV.put("mcp:diag:last-auth-stage", "redirect-ready", { expirationTtl: 300 });
-  return Response.redirect(redirect.toString(), 302);
+  return new Response(null, {
+    status: 303,
+    headers: {
+      location: redirect.toString(),
+      "cache-control": "no-store",
+      pragma: "no-cache",
+    },
+  });
 }
 
 async function issueTokens(env: OAuthEnv, source: SignedPayload) {
