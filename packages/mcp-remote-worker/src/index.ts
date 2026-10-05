@@ -849,6 +849,7 @@ export default {
       const d1Ms = Date.now() - d1Started;
       const lastAuthStage = await env.AUTH_KV.get("mcp:diag:last-auth-stage");
       const lastTokenStage = await env.AUTH_KV.get("mcp:diag:last-token-stage");
+      const lastMcpStage = await env.AUTH_KV.get("mcp:diag:last-mcp-stage");
 
       return Response.json({
         ok: true,
@@ -860,6 +861,7 @@ export default {
         signingSecretConfigured: Boolean(env.OAUTH_SIGNING_SECRET),
         lastAuthStage: lastAuthStage || null,
         lastTokenStage: lastTokenStage || null,
+        lastMcpStage: lastMcpStage || null,
       }, { headers: { "cache-control": "no-store" } });
     }
 
@@ -909,6 +911,16 @@ export default {
       ? [MAIL_READ_SCOPE, MAIL_WRITE_SCOPE]
       : [MAIL_READ_SCOPE];
 
+    if (agentMode) {
+      const accept = request.headers.get("accept") || "";
+      const contentType = request.headers.get("content-type") || "";
+      await env.AUTH_KV.put(
+        "mcp:diag:last-mcp-stage",
+        "request:" + request.method + ":accept=" + accept.slice(0, 80) + ":content-type=" + contentType.slice(0, 80),
+        { expirationTtl: 600 },
+      );
+    }
+
     if (!(await authenticateMcpRequest(request, env, requiredScopes))) {
       return oauthUnauthorized(
         "invalid_token",
@@ -919,9 +931,35 @@ export default {
       );
     }
 
-    const handler = createMcpHandler(() => createServer(env, agentMode));
-    const response = await handler(request, env, ctx);
-    response.headers.set("cache-control", "no-store");
-    return response;
+    if (agentMode) {
+      await env.AUTH_KV.put("mcp:diag:last-mcp-stage", "auth-ok", { expirationTtl: 600 });
+    }
+
+    try {
+      const handler = createMcpHandler(() => createServer(env, agentMode));
+      if (agentMode) {
+        await env.AUTH_KV.put("mcp:diag:last-mcp-stage", "handler-start", { expirationTtl: 600 });
+      }
+      const response = await handler(request, env, ctx);
+      if (agentMode) {
+        await env.AUTH_KV.put(
+          "mcp:diag:last-mcp-stage",
+          "handler-response:" + response.status,
+          { expirationTtl: 600 },
+        );
+      }
+      response.headers.set("cache-control", "no-store");
+      return response;
+    } catch (error) {
+      if (agentMode) {
+        const message = error instanceof Error ? error.message : String(error);
+        await env.AUTH_KV.put(
+          "mcp:diag:last-mcp-stage",
+          "handler-error:" + message.slice(0, 180),
+          { expirationTtl: 600 },
+        );
+      }
+      throw error;
+    }
   },
 } satisfies ExportedHandler<Env>;
