@@ -628,6 +628,7 @@ export default {
       `).bind(env.MCP_MAILBOX).first<{ status: number; isDel: number }>();
       const d1Ms = Date.now() - d1Started;
       const lastAuthStage = await env.AUTH_KV.get("mcp:diag:last-auth-stage");
+      const lastTokenStage = await env.AUTH_KV.get("mcp:diag:last-token-stage");
 
       return Response.json({
         ok: true,
@@ -638,6 +639,7 @@ export default {
         userActive: Boolean(row && row.status === 0 && row.isDel === 0),
         signingSecretConfigured: Boolean(env.OAUTH_SIGNING_SECRET),
         lastAuthStage: lastAuthStage || null,
+        lastTokenStage: lastTokenStage || null,
       }, { headers: { "cache-control": "no-store" } });
     }
 

@@ -424,10 +424,16 @@ async function issueTokens(env: OAuthEnv, source: SignedPayload) {
 }
 
 async function token(request: Request, env: OAuthEnv) {
+  await env.AUTH_KV.put("mcp:diag:last-token-stage", "token-request-received", { expirationTtl: 300 });
   const form = await request.formData();
   const grantType = String(form.get("grant_type") || "");
   const clientId = String(form.get("client_id") || "");
   const resource = String(form.get("resource") || RESOURCE);
+  await env.AUTH_KV.put(
+    "mcp:diag:last-token-stage",
+    "parsed:" + (grantType || "missing-grant") + ":" + (clientId ? "client-present" : "client-missing"),
+    { expirationTtl: 300 },
+  );
 
   if (resource !== RESOURCE) return oauthError(400, "invalid_target", "Invalid MCP resource");
 
@@ -449,6 +455,7 @@ async function token(request: Request, env: OAuthEnv) {
       clientId !== CHATGPT_CLIENT_ID ||
       redirectUri !== CHATGPT_REDIRECT_URI
     ) {
+      await env.AUTH_KV.put("mcp:diag:last-token-stage", "authorization-code-invalid", { expirationTtl: 300 });
       return oauthError(400, "invalid_grant", "Authorization code is invalid or expired");
     }
 
@@ -457,10 +464,12 @@ async function token(request: Request, env: OAuthEnv) {
       return oauthError(400, "invalid_grant", "Authorization code has already been used");
     }
     if (!verifier || (await pkceS256(verifier)) !== payload.code_challenge) {
+      await env.AUTH_KV.put("mcp:diag:last-token-stage", "pkce-failed", { expirationTtl: 300 });
       return oauthError(400, "invalid_grant", "PKCE verification failed");
     }
 
     await env.AUTH_KV.put(usedKey, "1", { expirationTtl: CODE_TTL_SECONDS + 60 });
+    await env.AUTH_KV.put("mcp:diag:last-token-stage", "authorization-code-success", { expirationTtl: 300 });
     return Response.json(await issueTokens(env, payload), {
       headers: { "cache-control": "no-store", pragma: "no-cache" },
     });
