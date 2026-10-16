@@ -26,4 +26,5 @@ bucket_name = "${R2_BUCKET_NAME}"
 
 [vars]
 MCP_MAILBOX = "${MCP_MAILBOX}"
+MCP_PERSONAL_MAILBOXES = "${MCP_PERSONAL_MAILBOXES}"
 MAIL_API_URL = "https://mail.jcllyuki.com/api"

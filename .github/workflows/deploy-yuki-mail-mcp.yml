@@ -22,6 +22,7 @@ jobs:
       KV_NAMESPACE_ID: ${{ secrets.KV_NAMESPACE_ID || vars.KV_NAMESPACE_ID }}
       R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME || vars.R2_BUCKET_NAME || 'cloud-mail-r2' }}
       MCP_MAILBOX: ${{ secrets.ADMIN || vars.ADMIN || 'admin@jcllyuki.com' }}
+      MCP_PERSONAL_MAILBOXES: ${{ secrets.MCP_PERSONAL_MAILBOXES || vars.MCP_PERSONAL_MAILBOXES || 'yuki@jcllyuki.com,resi@jcllyuki.com' }}
       JWT_SECRET: ${{ secrets.JWT_SECRET }}
 
     steps:
@@ -110,6 +111,10 @@ jobs:
           NODE_OPTIONS: --max-old-space-size=4096
         run: npm run build
 
+      - name: Run automated tests
+        working-directory: packages/mcp-remote-worker
+        run: npm test
+
       - name: Render isolated Wrangler config
         working-directory: packages/mcp-remote-worker
         shell: bash
@@ -121,6 +126,7 @@ jobs:
           sed -i "s|\${KV_NAMESPACE_ID}|$KV_NAMESPACE_ID|g" wrangler-action.toml
           sed -i "s|\${R2_BUCKET_NAME}|$R2_BUCKET_NAME|g" wrangler-action.toml
           sed -i "s|\${MCP_MAILBOX}|$MCP_MAILBOX|g" wrangler-action.toml
+          sed -i "s|\${MCP_PERSONAL_MAILBOXES}|$MCP_PERSONAL_MAILBOXES|g" wrangler-action.toml
 
       - name: Deploy Remote MCP worker
         working-directory: packages/mcp-remote-worker

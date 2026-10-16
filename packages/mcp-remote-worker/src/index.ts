@@ -9,19 +9,26 @@ import {
   handleOAuthRequest,
   oauthUnauthorized,
   toolSecurity,
-} from "./oauth";
+} from "./oauth.ts";
+import {
+  resolveMailboxScope,
+  applyMailboxAccountFilter,
+  type MailboxScope,
+} from "./mailbox-scope.ts";
 
-interface Env {
+export interface Env {
   DB: D1Database;
   R2: R2Bucket;
   AUTH_KV: KVNamespace;
   OAUTH_SIGNING_SECRET: string;
   MCP_MAILBOX: string;
+  MCP_PERSONAL_MAILBOXES?: string;
   MAIL_API_URL: string;
 }
 
-type EmailRow = {
+export type EmailRow = {
   emailId: number;
+  accountId?: number;
   sendEmail: string | null;
   sendName: string | null;
   toEmail: string | null;
@@ -41,7 +48,7 @@ type EmailRow = {
   attCount?: number;
 };
 
-type AttachmentRow = {
+export type AttachmentRow = {
   attId: number;
   filename: string | null;
   mimeType: string | null;
@@ -51,14 +58,16 @@ type AttachmentRow = {
   contentId: string | null;
 };
 
-const ListEmailsSchema = {
+export const ListEmailsSchema = {
   box: z.enum(["inbox", "sent", "trash", "drafts"]).default("inbox"),
+  mailbox: z.string().email().optional().describe("Filter by a specific authorized mailbox (e.g. admin@jcllyuki.com, yuki@jcllyuki.com, resi@jcllyuki.com). Defaults to aggregating all authorized mailboxes."),
   page: z.number().int().min(1).default(1),
   pageSize: z.number().int().min(1).max(50).default(20),
   unreadOnly: z.boolean().default(false),
 };
 
-const SearchEmailsSchema = {
+export const SearchEmailsSchema = {
+  mailbox: z.string().email().optional().describe("Filter by a specific authorized mailbox (e.g. admin@jcllyuki.com, yuki@jcllyuki.com, resi@jcllyuki.com). Defaults to searching all authorized mailboxes."),
   query: z.string().min(1).optional(),
   from: z.string().optional(),
   to: z.string().optional(),
@@ -68,24 +77,25 @@ const SearchEmailsSchema = {
   limit: z.number().int().min(1).max(50).default(10),
 };
 
-const GetEmailSchema = {
+export const GetEmailSchema = {
   emailId: z.number().int().positive(),
   includeHtml: z.boolean().default(false),
 };
 
-const GetVerificationCodeSchema = {
+export const GetVerificationCodeSchema = {
+  mailbox: z.string().email().optional().describe("Filter by a specific authorized mailbox (e.g. admin@jcllyuki.com, yuki@jcllyuki.com, resi@jcllyuki.com). Defaults to checking all authorized mailboxes."),
   serviceName: z.string().optional(),
   from: z.string().optional(),
   maxAgeMinutes: z.number().int().min(1).max(1440).default(15),
 };
 
-const GetAttachmentSchema = {
+export const GetAttachmentSchema = {
   emailId: z.number().int().positive(),
   attId: z.number().int().positive(),
   maxTextLength: z.number().int().min(100).max(20000).default(8000),
 };
 
-const SendEmailSchema = {
+export const SendEmailSchema = {
   to: z.string().email().describe("Single recipient email address."),
   subject: z.string().min(1).max(240),
   text: z.string().max(100000).optional(),
@@ -95,12 +105,12 @@ const SendEmailSchema = {
   confirm: z.boolean().describe("Must be true only after the user explicitly approves sending this exact email."),
 };
 
-const DeleteEmailSchema = {
+export const DeleteEmailSchema = {
   emailId: z.number().int().positive(),
   confirm: z.boolean().describe("Must be true only after the user explicitly approves moving this email to trash."),
 };
 
-const CreateMailboxSchema = {
+export const CreateMailboxSchema = {
   email: z.string().email(),
   password: z.string().min(8).max(128).optional(),
   confirm: z.boolean().describe("Must be true only after the user explicitly approves creating this mailbox."),
@@ -132,12 +142,12 @@ function authToolConfig<T extends Record<string, unknown>>(
   } as T;
 }
 
-function displayAddress(name?: string | null, email?: string | null) {
+export function displayAddress(name?: string | null, email?: string | null) {
   if (!email) return "";
   return name ? `${name} <${email}>` : email;
 }
 
-function compactEmail(row: EmailRow) {
+export function compactEmail(row: EmailRow) {
   return {
     emailId: row.emailId,
     from: displayAddress(row.sendName, row.sendEmail),
@@ -151,7 +161,7 @@ function compactEmail(row: EmailRow) {
   };
 }
 
-function addBoxFilter(box: string, conditions: string[]) {
+export function addBoxFilter(box: string, conditions: string[]) {
   if (box === "trash") {
     conditions.push("e.is_del = 1");
     return;
@@ -169,29 +179,7 @@ function addBoxFilter(box: string, conditions: string[]) {
   }
 }
 
-function addMailboxFilter(
-  box: string,
-  mailbox: string,
-  conditions: string[],
-  values: Array<string | number>,
-) {
-  if (box === "inbox") {
-    conditions.push("LOWER(e.to_email) = LOWER(?)");
-    values.push(mailbox);
-    return;
-  }
-
-  if (box === "sent" || box === "drafts") {
-    conditions.push("LOWER(e.send_email) = LOWER(?)");
-    values.push(mailbox);
-    return;
-  }
-
-  conditions.push("(LOWER(e.to_email) = LOWER(?) OR LOWER(e.send_email) = LOWER(?))");
-  values.push(mailbox, mailbox);
-}
-
-async function listEmails(
+export async function listEmails(
   env: Env,
   params: {
     box: string;
@@ -199,11 +187,12 @@ async function listEmails(
     pageSize: number;
     unreadOnly: boolean;
   },
+  accountIds: number[],
 ) {
   const conditions: string[] = [];
   const values: Array<string | number> = [];
   addBoxFilter(params.box, conditions);
-  addMailboxFilter(params.box, env.MCP_MAILBOX, conditions, values);
+  applyMailboxAccountFilter(accountIds, conditions, values);
 
   if (params.unreadOnly) {
     conditions.push("e.unread = 0");
@@ -214,6 +203,7 @@ async function listEmails(
   const sql = `
     SELECT
       e.email_id AS emailId,
+      e.account_id AS accountId,
       e.send_email AS sendEmail,
       e.name AS sendName,
       e.to_email AS toEmail,
@@ -235,7 +225,7 @@ async function listEmails(
   return result.results || [];
 }
 
-async function searchEmails(
+export async function searchEmails(
   env: Env,
   params: {
     query?: string;
@@ -246,12 +236,11 @@ async function searchEmails(
     before?: string;
     limit: number;
   },
+  accountIds: number[],
 ) {
-  const conditions = [
-    "e.is_del = 0",
-    "(LOWER(e.to_email) = LOWER(?) OR LOWER(e.send_email) = LOWER(?))",
-  ];
-  const values: Array<string | number> = [env.MCP_MAILBOX, env.MCP_MAILBOX];
+  const conditions = ["e.is_del = 0"];
+  const values: Array<string | number> = [];
+  applyMailboxAccountFilter(accountIds, conditions, values);
 
   if (params.query) {
     const like = `%${params.query}%`;
@@ -285,6 +274,7 @@ async function searchEmails(
   const sql = `
     SELECT
       e.email_id AS emailId,
+      e.account_id AS accountId,
       e.send_email AS sendEmail,
       e.name AS sendName,
       e.to_email AS toEmail,
@@ -306,10 +296,15 @@ async function searchEmails(
   return result.results || [];
 }
 
-async function getEmail(env: Env, emailId: number) {
+export async function getEmail(env: Env, emailId: number, accountIds: number[]) {
+  const conditions: string[] = ["e.email_id = ?"];
+  const values: Array<string | number> = [emailId];
+  applyMailboxAccountFilter(accountIds, conditions, values);
+
   const row = await env.DB.prepare(`
     SELECT
       e.email_id AS emailId,
+      e.account_id AS accountId,
       e.send_email AS sendEmail,
       e.name AS sendName,
       e.to_email AS toEmail,
@@ -327,12 +322,15 @@ async function getEmail(env: Env, emailId: number) {
       e.in_reply_to AS inReplyTo,
       e.relation AS relation
     FROM email e
-    WHERE e.email_id = ?
-      AND (LOWER(e.to_email) = LOWER(?) OR LOWER(e.send_email) = LOWER(?))
+    WHERE ${conditions.join(" AND ")}
     LIMIT 1
-  `).bind(emailId, env.MCP_MAILBOX, env.MCP_MAILBOX).first<EmailRow>();
+  `).bind(...values).first<EmailRow>();
 
   if (!row) return null;
+
+  const attConditions: string[] = ["a.email_id = ?"];
+  const attValues: Array<string | number> = [emailId];
+  applyMailboxAccountFilter(accountIds, attConditions, attValues);
 
   const attachments = await env.DB.prepare(`
     SELECT
@@ -345,10 +343,9 @@ async function getEmail(env: Env, emailId: number) {
       a.content_id AS contentId
     FROM attachments a
     INNER JOIN email e ON e.email_id = a.email_id
-    WHERE a.email_id = ?
-      AND (LOWER(e.to_email) = LOWER(?) OR LOWER(e.send_email) = LOWER(?))
+    WHERE ${attConditions.join(" AND ")}
     ORDER BY a.att_id ASC
-  `).bind(emailId, env.MCP_MAILBOX, env.MCP_MAILBOX).all<AttachmentRow>();
+  `).bind(...attValues).all<AttachmentRow>();
 
   return {
     ...row,
@@ -356,7 +353,33 @@ async function getEmail(env: Env, emailId: number) {
   };
 }
 
-function extractVerificationCode(text: string, subject = "") {
+export async function getAttachment(
+  env: Env,
+  emailId: number,
+  attId: number,
+  accountIds: number[],
+) {
+  const conditions: string[] = ["a.email_id = ?", "a.att_id = ?"];
+  const values: Array<string | number> = [emailId, attId];
+  applyMailboxAccountFilter(accountIds, conditions, values);
+
+  return await env.DB.prepare(`
+    SELECT
+      a.att_id AS attId,
+      a.filename,
+      a.mime_type AS mimeType,
+      a.size,
+      a.key,
+      a.disposition,
+      a.content_id AS contentId
+    FROM attachments a
+    INNER JOIN email e ON e.email_id = a.email_id
+    WHERE ${conditions.join(" AND ")}
+    LIMIT 1
+  `).bind(...values).first<AttachmentRow>();
+}
+
+export function extractVerificationCode(text: string, subject = "") {
   const source = `${subject}\n${text}`;
   const contextual = source.match(/(?:verification|verify|code|验证码|校验码|otp)[^0-9]{0,30}([0-9]{4,8})/i);
   if (contextual?.[1]) return contextual[1];
@@ -406,7 +429,7 @@ function mailboxDomain(mailbox: string) {
   return mailbox.split("@").pop()?.toLowerCase() || "";
 }
 
-function createServer(env: Env, agentMode = false) {
+export function createServer(env: Env, agentMode = false) {
   const server = new McpServer({
     name: agentMode ? "yuki-mail-agent" : "yuki-mail-readonly",
     version: "0.3.0",
@@ -447,38 +470,89 @@ function createServer(env: Env, agentMode = false) {
   );
 
   server.registerTool(
+    "cloud_mail_mailboxes",
+    authToolConfig({
+      title: "List authorized Yuki Mail mailboxes",
+      description: "List all mailboxes currently authorized for this Yuki Mail connection (including admin and personal mailboxes). Read-only.",
+      inputSchema: {},
+      outputSchema: {
+        account: z.string().email(),
+        mailboxes: z.array(z.string().email()),
+        count: z.number().int().nonnegative(),
+      },
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        openWorldHint: false,
+      },
+    }),
+    async () => {
+      try {
+        const scope = await resolveMailboxScope(env);
+        return jsonResult({
+          account: env.MCP_MAILBOX,
+          mailboxes: scope.allMailboxes,
+          count: scope.allMailboxes.length,
+        });
+      } catch (error) {
+        return jsonResult({
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+    },
+  );
+
+  server.registerTool(
     "cloud_mail_list",
     authToolConfig({
-      description: "List Yuki Mail messages with compact metadata. Read-only. Use cloud_mail_get for full content.",
+      description: "List Yuki Mail messages with compact metadata across authorized mailboxes. Read-only. Use cloud_mail_get for full content.",
       inputSchema: ListEmailsSchema,
       annotations: { readOnlyHint: true, openWorldHint: false },
     }),
     async (args) => {
-      const emails = await listEmails(env, args);
-      return jsonResult({
-        account: env.MCP_MAILBOX,
-        box: args.box,
-        page: args.page,
-        count: emails.length,
-        emails: emails.map(compactEmail),
-      });
+      try {
+        const scope = await resolveMailboxScope(env, args.mailbox);
+        const emails = await listEmails(env, args, scope.accountIds);
+        return jsonResult({
+          account: env.MCP_MAILBOX,
+          mailbox: args.mailbox ? args.mailbox.toLowerCase() : "all",
+          authorizedMailboxes: scope.allMailboxes,
+          box: args.box,
+          page: args.page,
+          count: emails.length,
+          emails: emails.map(compactEmail),
+        });
+      } catch (error) {
+        return jsonResult({
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
     },
   );
 
   server.registerTool(
     "cloud_mail_search",
     authToolConfig({
-      description: "Search Yuki Mail by sender, recipient, subject, body text, and date range. Read-only.",
+      description: "Search Yuki Mail by sender, recipient, subject, body text, and date range across authorized mailboxes. Read-only.",
       inputSchema: SearchEmailsSchema,
       annotations: { readOnlyHint: true, openWorldHint: false },
     }),
     async (args) => {
-      const emails = await searchEmails(env, args);
-      return jsonResult({
-        account: env.MCP_MAILBOX,
-        count: emails.length,
-        emails: emails.map(compactEmail),
-      });
+      try {
+        const scope = await resolveMailboxScope(env, args.mailbox);
+        const emails = await searchEmails(env, args, scope.accountIds);
+        return jsonResult({
+          account: env.MCP_MAILBOX,
+          mailbox: args.mailbox ? args.mailbox.toLowerCase() : "all",
+          authorizedMailboxes: scope.allMailboxes,
+          count: emails.length,
+          emails: emails.map(compactEmail),
+        });
+      } catch (error) {
+        return jsonResult({
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
     },
   );
 
@@ -490,140 +564,162 @@ function createServer(env: Env, agentMode = false) {
       annotations: { readOnlyHint: true, openWorldHint: false },
     }),
     async (args) => {
-      const detail = await getEmail(env, args.emailId);
-      if (!detail) return jsonResult({ error: `Email ${args.emailId} not found in ${env.MCP_MAILBOX}` });
+      try {
+        const scope = await resolveMailboxScope(env);
+        const detail = await getEmail(env, args.emailId, scope.accountIds);
+        if (!detail) {
+          return jsonResult({ error: `Email ${args.emailId} not found in authorized mailboxes` });
+        }
 
-      const payload: Record<string, unknown> = {
-        account: env.MCP_MAILBOX,
-        emailId: detail.emailId,
-        from: displayAddress(detail.sendName, detail.sendEmail),
-        to: displayAddress(detail.toName, detail.toEmail),
-        subject: detail.subject || "(No Subject)",
-        receivedAt: detail.createTime,
-        unread: detail.unread === 0,
-        verificationCode: detail.code || undefined,
-        messageId: detail.messageId || undefined,
-        inReplyTo: detail.inReplyTo || undefined,
-        text: detail.text || "",
-        attachments: detail.attachments.map((att) => ({
-          attId: att.attId,
-          filename: att.filename || "",
-          mimeType: att.mimeType || "application/octet-stream",
-          sizeBytes: att.size || 0,
-          downloadUrl: `${env.MAIL_API_URL}/oss/${att.key.split("/").map(encodeURIComponent).join("/")}`,
-        })),
-      };
+        const payload: Record<string, unknown> = {
+          account: env.MCP_MAILBOX,
+          emailId: detail.emailId,
+          from: displayAddress(detail.sendName, detail.sendEmail),
+          to: displayAddress(detail.toName, detail.toEmail),
+          subject: detail.subject || "(No Subject)",
+          receivedAt: detail.createTime,
+          unread: detail.unread === 0,
+          verificationCode: detail.code || undefined,
+          messageId: detail.messageId || undefined,
+          inReplyTo: detail.inReplyTo || undefined,
+          text: detail.text || "",
+          attachments: detail.attachments.map((att) => ({
+            attId: att.attId,
+            filename: att.filename || "",
+            mimeType: att.mimeType || "application/octet-stream",
+            sizeBytes: att.size || 0,
+            downloadUrl: `${env.MAIL_API_URL}/oss/${att.key.split("/").map(encodeURIComponent).join("/")}`,
+          })),
+        };
 
-      if (args.includeHtml) payload.html = detail.content || "";
-      return jsonResult(payload);
+        if (args.includeHtml) payload.html = detail.content || "";
+        return jsonResult(payload);
+      } catch (error) {
+        return jsonResult({
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
     },
   );
 
   server.registerTool(
     "cloud_mail_get_verification_code",
     authToolConfig({
-      description: "Find the newest recent verification code in Yuki Mail. Read-only and token-efficient.",
+      description: "Find the newest recent verification code in Yuki Mail across authorized mailboxes. Read-only and token-efficient.",
       inputSchema: GetVerificationCodeSchema,
       annotations: { readOnlyHint: true, openWorldHint: false },
     }),
     async (args) => {
-      const rows = await listEmails(env, {
-        box: "inbox",
-        page: 1,
-        pageSize: 20,
-        unreadOnly: false,
-      });
+      try {
+        const scope = await resolveMailboxScope(env, args.mailbox);
+        const rows = await listEmails(env, {
+          box: "inbox",
+          page: 1,
+          pageSize: 20,
+          unreadOnly: false,
+        }, scope.accountIds);
 
-      const cutoff = Date.now() - args.maxAgeMinutes * 60_000;
-      const filtered = rows.filter((row) => {
-        if (row.createTime) {
-          const t = new Date(row.createTime.replace(" ", "T") + "Z").getTime();
-          if (!Number.isNaN(t) && t < cutoff) return false;
-        }
-        const haystack = `${row.sendEmail || ""} ${row.sendName || ""} ${row.subject || ""}`.toLowerCase();
-        if (args.serviceName && !haystack.includes(args.serviceName.toLowerCase())) return false;
-        if (args.from && !(row.sendEmail || "").toLowerCase().includes(args.from.toLowerCase())) return false;
-        return true;
-      });
+        const cutoff = Date.now() - args.maxAgeMinutes * 60_000;
+        const filtered = rows.filter((row) => {
+          if (row.createTime) {
+            const t = new Date(row.createTime.replace(" ", "T") + "Z").getTime();
+            if (!Number.isNaN(t) && t < cutoff) return false;
+          }
+          const haystack = `${row.sendEmail || ""} ${row.sendName || ""} ${row.subject || ""}`.toLowerCase();
+          if (args.serviceName && !haystack.includes(args.serviceName.toLowerCase())) return false;
+          if (args.from && !(row.sendEmail || "").toLowerCase().includes(args.from.toLowerCase())) return false;
+          return true;
+        });
 
-      for (const row of filtered) {
-        if (row.code?.trim()) {
-          return jsonResult({
-            found: true,
-            account: env.MCP_MAILBOX,
-            emailId: row.emailId,
-            code: row.code.trim(),
-            from: displayAddress(row.sendName, row.sendEmail),
-            subject: row.subject,
-            receivedAt: row.createTime,
-            source: "d1_ai_code",
-          });
+        for (const row of filtered) {
+          if (row.code?.trim()) {
+            return jsonResult({
+              found: true,
+              account: env.MCP_MAILBOX,
+              mailbox: row.toEmail || undefined,
+              emailId: row.emailId,
+              code: row.code.trim(),
+              from: displayAddress(row.sendName, row.sendEmail),
+              subject: row.subject,
+              receivedAt: row.createTime,
+              source: "d1_ai_code",
+            });
+          }
         }
+
+        for (const row of filtered.slice(0, 3)) {
+          const detail = await getEmail(env, row.emailId, scope.accountIds);
+          if (!detail) continue;
+          const code = extractVerificationCode(detail.text || "", detail.subject || "");
+          if (code) {
+            return jsonResult({
+              found: true,
+              account: env.MCP_MAILBOX,
+              mailbox: row.toEmail || undefined,
+              emailId: row.emailId,
+              code,
+              from: displayAddress(row.sendName, row.sendEmail),
+              subject: row.subject,
+              receivedAt: row.createTime,
+              source: "regex_fallback",
+            });
+          }
+        }
+
+        return jsonResult({
+          found: false,
+          account: env.MCP_MAILBOX,
+          mailbox: args.mailbox ? args.mailbox.toLowerCase() : "all",
+          checkedEmailCount: filtered.length,
+        });
+      } catch (error) {
+        return jsonResult({
+          error: error instanceof Error ? error.message : String(error),
+        });
       }
-
-      for (const row of filtered.slice(0, 3)) {
-        const detail = await getEmail(env, row.emailId);
-        if (!detail) continue;
-        const code = extractVerificationCode(detail.text || "", detail.subject || "");
-        if (code) {
-          return jsonResult({
-            found: true,
-            account: env.MCP_MAILBOX,
-            emailId: row.emailId,
-            code,
-            from: displayAddress(row.sendName, row.sendEmail),
-            subject: row.subject,
-            receivedAt: row.createTime,
-            source: "regex_fallback",
-          });
-        }
-      }
-
-      return jsonResult({
-        found: false,
-        account: env.MCP_MAILBOX,
-        checkedEmailCount: filtered.length,
-      });
     },
   );
 
   server.registerTool(
     "cloud_mail_get_attachment",
     authToolConfig({
-      description: "Preview text-like attachments or return metadata and a download URL for binary attachments. Read-only.",
+      description: "Preview text-like attachments or return metadata and a download URL for binary attachments across authorized mailboxes. Read-only.",
       inputSchema: GetAttachmentSchema,
       annotations: { readOnlyHint: true, openWorldHint: false },
     }),
     async (args) => {
-      const att = await env.DB.prepare(`
-        SELECT
-          a.att_id AS attId,
-          a.filename,
-          a.mime_type AS mimeType,
-          a.size,
-          a.key,
-          a.disposition,
-          a.content_id AS contentId
-        FROM attachments a
-        INNER JOIN email e ON e.email_id = a.email_id
-        WHERE a.email_id = ?
-          AND a.att_id = ?
-          AND (LOWER(e.to_email) = LOWER(?) OR LOWER(e.send_email) = LOWER(?))
-        LIMIT 1
-      `).bind(args.emailId, args.attId, env.MCP_MAILBOX, env.MCP_MAILBOX).first<AttachmentRow>();
+      try {
+        const scope = await resolveMailboxScope(env);
+        const att = await getAttachment(env, args.emailId, args.attId, scope.accountIds);
 
-      if (!att) return jsonResult({ error: "Attachment not found" });
+        if (!att) return jsonResult({ error: "Attachment not found in authorized mailboxes" });
 
-      const mime = att.mimeType || "application/octet-stream";
-      const filename = att.filename || "";
-      const isTextLike =
-        /^text\//i.test(mime) ||
-        /^application\/(json|xml|csv|javascript)/i.test(mime) ||
-        /\.(txt|json|csv|log|md|xml|js|ts)$/i.test(filename);
+        const mime = att.mimeType || "application/octet-stream";
+        const filename = att.filename || "";
+        const isTextLike =
+          /^text\//i.test(mime) ||
+          /^application\/(json|xml|csv|javascript)/i.test(mime) ||
+          /\.(txt|json|csv|log|md|xml|js|ts)$/i.test(filename);
 
-      const downloadUrl = `${env.MAIL_API_URL}/oss/${att.key.split("/").map(encodeURIComponent).join("/")}`;
+        const downloadUrl = `${env.MAIL_API_URL}/oss/${att.key.split("/").map(encodeURIComponent).join("/")}`;
 
-      if (!isTextLike) {
+        if (!isTextLike) {
+          return jsonResult({
+            account: env.MCP_MAILBOX,
+            emailId: args.emailId,
+            attId: att.attId,
+            filename,
+            mimeType: mime,
+            sizeBytes: att.size || 0,
+            previewAvailable: false,
+            downloadUrl,
+          });
+        }
+
+        const object = await env.R2.get(att.key);
+        if (!object) return jsonResult({ error: "Attachment object is missing from R2" });
+        const preview = (await object.text()).slice(0, args.maxTextLength);
+
         return jsonResult({
           account: env.MCP_MAILBOX,
           emailId: args.emailId,
@@ -631,27 +727,16 @@ function createServer(env: Env, agentMode = false) {
           filename,
           mimeType: mime,
           sizeBytes: att.size || 0,
-          previewAvailable: false,
+          previewAvailable: true,
+          preview,
+          truncated: (att.size || 0) > args.maxTextLength,
           downloadUrl,
         });
+      } catch (error) {
+        return jsonResult({
+          error: error instanceof Error ? error.message : String(error),
+        });
       }
-
-      const object = await env.R2.get(att.key);
-      if (!object) return jsonResult({ error: "Attachment object is missing from R2" });
-      const preview = (await object.text()).slice(0, args.maxTextLength);
-
-      return jsonResult({
-        account: env.MCP_MAILBOX,
-        emailId: args.emailId,
-        attId: att.attId,
-        filename,
-        mimeType: mime,
-        sizeBytes: att.size || 0,
-        previewAvailable: true,
-        preview,
-        truncated: (att.size || 0) > args.maxTextLength,
-        downloadUrl,
-      });
     },
   );
 
@@ -721,7 +806,7 @@ function createServer(env: Env, agentMode = false) {
       "cloud_mail_delete",
       authToolConfig({
         title: "Move Yuki Mail email to trash",
-        description: "Soft-delete one email by moving it to trash. Only emails belonging to the authenticated Yuki Mail mailbox can be changed. Requires explicit user approval.",
+        description: "Soft-delete one email by moving it to trash. Only emails belonging to authorized Yuki Mail mailboxes can be changed. Requires explicit user approval.",
         inputSchema: DeleteEmailSchema,
         annotations: {
           readOnlyHint: false,
@@ -734,9 +819,10 @@ function createServer(env: Env, agentMode = false) {
         if (args.confirm !== true) {
           return jsonResult({ success: false, error: "Explicit confirmation is required before moving email to trash." });
         }
-        const existing = await getEmail(env, args.emailId);
+        const scope = await resolveMailboxScope(env);
+        const existing = await getEmail(env, args.emailId, scope.accountIds);
         if (!existing) {
-          return jsonResult({ success: false, error: "Email not found in the authenticated Yuki Mail mailbox." });
+          return jsonResult({ success: false, error: "Email not found in authorized mailboxes." });
         }
 
         try {
