@@ -1,0 +1,4 @@
+# Yuki Mail is a private webmail application.
+# Crawlers may fetch pages to observe noindex directives; authentication remains mandatory.
+User-agent: *
+Allow: /
