@@ -116,7 +116,7 @@ export const CreateMailboxSchema = {
   confirm: z.boolean().describe("Must be true only after the user explicitly approves creating this mailbox."),
 };
 
-function jsonResult(data: unknown) {
+export function jsonResult(data: unknown) {
   return {
     content: [
       {
@@ -124,6 +124,9 @@ function jsonResult(data: unknown) {
         text: JSON.stringify(data, null, 2),
       },
     ],
+    // A tool declaring outputSchema must supply structuredContent as well.
+    // Keep text content for existing clients and add structured data for MCP hosts.
+    structuredContent: data as Record<string, unknown>,
   };
 }
 
@@ -495,9 +498,9 @@ export function createServer(env: Env, agentMode = false) {
           count: scope.allMailboxes.length,
         });
       } catch (error) {
-        return jsonResult({
-          error: error instanceof Error ? error.message : String(error),
-        });
+        // Do not return a success-shaped response that violates the outputSchema.
+        // The MCP framework will surface a proper tool error to the client.
+        throw error;
       }
     },
   );

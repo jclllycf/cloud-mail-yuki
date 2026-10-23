@@ -11,6 +11,7 @@ import {
   getEmail,
   getAttachment,
   createServer,
+  jsonResult,
   type Env,
 } from "../src/index.ts";
 
@@ -355,6 +356,13 @@ test("10. getAttachment permits authorized email attachments and blocks unapprov
   // Attacker trying to probe attachment 202 with email 1 (ID mismatch): MUST return null
   const spoofedAtt = await getAttachment(env, 1, 202, scope.accountIds);
   assert.equal(spoofedAtt, null);
+});
+
+test("11a. MCP result carries both structuredContent and compatible text", () => {
+  const payload = { account: "admin@jcllyuki.com", mailboxes: ["admin@jcllyuki.com"], count: 1 };
+  const response = jsonResult(payload);
+  assert.deepEqual(response.structuredContent, payload);
+  assert.deepEqual(JSON.parse(response.content[0].text), payload);
 });
 
 test("11. cloud_mail_mailboxes tool enumerates authorized addresses", async () => {
