@@ -315,9 +315,4 @@ jobs:
             echo "::warning:: Init response: HTTP: $HTTP_CODE, Response: $RESPONSE_BODY"
           fi
 
-      - name: 🗑️ 删除运行记录 / Delete workflow runs
-        uses: GitRML/delete-workflow-runs@main
-        continue-on-error: true
-        with:
-          retain_days: '1'
-          keep_minimum_runs: '0'
+      # Preserve workflow history for security auditing; no unpinned cleanup action.
