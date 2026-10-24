@@ -6,10 +6,12 @@ import telegramService from '../service/telegram-service';
 const dbInit = {
 	async init(c) {
 
-		const secret = c.req.param('secret');
+		const authorization = c.req.header('Authorization') || '';
+		const providedSecret = authorization.startsWith('Bearer ') ? authorization.slice(7) : '';
+		const expectedSecret = c.env.jwt_secret;
 
-		if (secret !== c.env.jwt_secret) {
-			return c.text('❌ JWT secret mismatch');
+		if (typeof expectedSecret !== 'string' || expectedSecret.length === 0 || !providedSecret || providedSecret !== expectedSecret) {
+			return c.text('Unauthorized', 401);
 		}
 
 		await this.intDB(c);

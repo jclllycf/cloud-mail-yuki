@@ -302,7 +302,11 @@ jobs:
             exit 0
           fi
           
-          HTTP_CODE=$(curl -sL -w "%{http_code}" -o response.txt "$WORKER_URL/api/init/${JWT_SECRET}")
+          # Never send a secret in the URL: Workers invocation logs can record URLs.
+          HTTP_CODE=$(curl -sS -w "%{http_code}" -o response.txt \
+            -X POST \
+            -H "Authorization: Bearer ${JWT_SECRET}" \
+            "$WORKER_URL/api/init")
           RESPONSE_BODY=$(cat response.txt)
 
           if [ "$RESPONSE_BODY" = "success" ]; then
@@ -311,9 +315,4 @@ jobs:
             echo "::warning:: Init response: HTTP: $HTTP_CODE, Response: $RESPONSE_BODY"
           fi
 
-      - name: 🗑️ 删除运行记录 / Delete workflow runs
-        uses: GitRML/delete-workflow-runs@main
-        continue-on-error: true
-        with:
-          retain_days: '1'
-          keep_minimum_runs: '0'
+      # Preserve workflow history for security auditing; no unpinned cleanup action.
