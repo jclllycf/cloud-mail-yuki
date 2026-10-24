@@ -302,7 +302,11 @@ jobs:
             exit 0
           fi
           
-          HTTP_CODE=$(curl -sL -w "%{http_code}" -o response.txt "$WORKER_URL/api/init/${JWT_SECRET}")
+          # Never send a secret in the URL: Workers invocation logs can record URLs.
+          HTTP_CODE=$(curl -sS -w "%{http_code}" -o response.txt \
+            -X POST \
+            -H "Authorization: Bearer ${JWT_SECRET}" \
+            "$WORKER_URL/api/init")
           RESPONSE_BODY=$(cat response.txt)
 
           if [ "$RESPONSE_BODY" = "success" ]; then
